@@ -1,0 +1,25 @@
+{
+    "cSpell.words": [
+        "AEFJR",
+        "ASGI",
+        "blocklist",
+        "createsuperuser",
+        "DATADOCKED",
+        "dedup",
+        "djangorestframework",
+        "dotenv",
+        "Fujairah",
+        "geofence",
+        "locode",
+        "MMSI",
+        "opps",
+        "psycopg",
+        "pycache",
+        "runserver",
+        "simplejwt",
+        "staticfiles",
+        "upserts",
+        "venv",
+        "WSGI"
+    ]
+}
