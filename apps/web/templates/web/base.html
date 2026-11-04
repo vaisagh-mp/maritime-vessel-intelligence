@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="{% static 'web/css/tokens.css' %}">
     <link rel="stylesheet" href="{% static 'web/css/base.css' %}">
     <link rel="stylesheet" href="{% static 'web/css/components.css' %}">
+    {% block styles %}{% endblock styles %}
 </head>
 <body>
     <a href="#main" class="skip-link">Skip to main content</a>
@@ -18,13 +19,18 @@
             <span class="brand-title">Vessel Intelligence</span>
         </div>
         <nav class="top-bar-nav" aria-label="Main navigation">
-            <a href="{% url 'web:home' %}" class="nav-link">Lead board</a>
+            <a href="{% url 'web:home' %}" class="nav-link{% if request.resolver_match.url_name == 'home' %} active{% endif %}"{% if request.resolver_match.url_name == 'home' %} aria-current="page"{% endif %}>Lead board</a>
             {% if user.is_staff %}
                 <a href="/admin/" class="nav-link">Admin</a>
             {% endif %}
         </nav>
         <div class="top-bar-user">
             <span class="user-name">{{ user.get_username }}</span>
+            {% if web_role == "admin" %}
+                <span class="user-role">Admin</span>
+            {% elif web_role == "bd_manager" %}
+                <span class="user-role">BD Manager</span>
+            {% endif %}
             <form method="post" action="{% url 'web:logout' %}" class="logout-form">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-logout">Logout</button>

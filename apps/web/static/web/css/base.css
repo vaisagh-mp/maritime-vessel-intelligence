@@ -140,6 +140,13 @@ p {
     text-decoration: none;
 }
 
+.nav-link[aria-current="page"],
+.nav-link.active {
+    color: var(--color-accent);
+    background-color: var(--color-bg);
+    font-weight: 600;
+}
+
 .top-bar-user {
     display: flex;
     align-items: center;
@@ -150,6 +157,16 @@ p {
     font-size: var(--font-sm);
     color: var(--color-text);
     font-weight: 500;
+}
+
+.user-role {
+    font-size: var(--font-xs);
+    font-weight: 600;
+    color: var(--color-accent);
+    background-color: var(--color-bg);
+    padding: var(--space-4) var(--space-8);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
 }
 
 .logout-form {
