@@ -248,11 +248,14 @@ def _handle_graphql_errors(data: dict, status_code: int, endpoint: str):
             field = match.group(1)
         elif "path" in first_err and isinstance(first_err["path"], list) and first_err["path"]:
             field = str(first_err["path"][-1])
+        logger.info("Kpler GraphQL error=NotEntitledError field=%s endpoint=%s", field, endpoint)
         raise NotEntitledError(msg, field=field, endpoint=endpoint, status_code=status_code or 403)
 
     if code == "GRAPHQL_VALIDATION_FAILED" or status_code == 400:
+        logger.info("Kpler GraphQL error=ParameterError endpoint=%s", endpoint)
         raise ParameterError(msg, endpoint=endpoint, status_code=status_code or 400)
 
+    logger.info("Kpler GraphQL error=ProviderRequestError endpoint=%s", endpoint)
     raise ProviderRequestError(msg, endpoint=endpoint, status_code=status_code)
 
 
@@ -296,9 +299,11 @@ def _execute_graphql_query(template: str, imos: list[str], label: str) -> list[d
                 )
             except requests.exceptions.RequestException as exc:
                 safe_msg = str(exc).replace(api_key, "{api_key}")
+                logger.info("Kpler GraphQL query=%s error=ProviderRequestError endpoint=%s", label, endpoint)
                 raise ProviderRequestError(f"Request failed: {safe_msg}", endpoint=endpoint) from exc
 
             if response.status_code == 401:
+                logger.info("Kpler GraphQL query=%s error=AuthenticationError endpoint=%s", label, endpoint)
                 raise AuthenticationError("Authentication failed (HTTP 401)", endpoint=endpoint, status_code=401)
 
             try:
