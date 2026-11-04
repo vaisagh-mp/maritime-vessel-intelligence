@@ -1,6 +1,12 @@
+import csv
+from datetime import datetime, timezone
+import io
+
+from django.conf import settings
 import django_filters
 from django.db import transaction
 from django.db.models import Q
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_datetime
 from rest_framework import status
@@ -50,72 +56,94 @@ class OpportunityBandFilter(django_filters.FilterSet):
         return queryset.none()
 
 
+def sanitize_csv_cell(val):
+    """Guard against CSV injection for spreadsheet viewers.
+    Any text cell starting with '=', '+', '-', '@', tab, or carriage return
+    is written with a leading single quote.
+    """
+    if val is None:
+        return ""
+    text = str(val)
+    if text and text[0] in ("=", "+", "-", "@", "\t", "\r"):
+        return f"'{text}"
+    return text
+
+
+def filter_and_order_opportunities(request):
+    """Reusable filtering and ordering logic shared by list and export views."""
+    qs = Opportunity.objects.select_related("vessel", "port").all()
+
+    filterset = OpportunityBandFilter(request.GET, queryset=qs)
+    if filterset.is_valid():
+        qs = filterset.qs
+
+    # open=true|false filter
+    open_param = request.query_params.get("open")
+    if open_param is not None:
+        if open_param.lower() in ("true", "1"):
+            qs = qs.exclude(stage__in=CLOSED_STAGES)
+        elif open_param.lower() in ("false", "0"):
+            qs = qs.filter(stage__in=CLOSED_STAGES)
+
+    # is_inbound=true|false filter
+    inbound_param = request.query_params.get("is_inbound")
+    if inbound_param is not None:
+        if inbound_param.lower() in ("true", "1"):
+            qs = qs.filter(is_inbound=True)
+        elif inbound_param.lower() in ("false", "0"):
+            qs = qs.filter(is_inbound=False)
+
+    # q search filter: vessel name (icontains), IMO/MMSI (istartswith)
+    q = request.query_params.get("q", "").strip()
+    if q:
+        qs = qs.filter(
+            Q(vessel__name__icontains=q)
+            | Q(vessel__imo__istartswith=q)
+            | Q(vessel__mmsi__istartswith=q)
+        )
+
+    # eta_before / eta_after datetime filters with 400 on invalid format
+    eta_before = request.query_params.get("eta_before")
+    if eta_before:
+        dt_before = parse_datetime(eta_before)
+        if dt_before is None:
+            return None, Response(
+                {"eta_before": ["Invalid ISO datetime format for eta_before."]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        qs = qs.filter(eta__lte=dt_before)
+
+    eta_after = request.query_params.get("eta_after")
+    if eta_after:
+        dt_after = parse_datetime(eta_after)
+        if dt_after is None:
+            return None, Response(
+                {"eta_after": ["Invalid ISO datetime format for eta_after."]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        qs = qs.filter(eta__gte=dt_after)
+
+    ordering = request.query_params.get("ordering", "-score")
+    valid_ordering_fields = [
+        "score", "-score", "detected_at", "-detected_at", "eta", "-eta"
+    ]
+    if ordering in valid_ordering_fields:
+        qs = qs.order_by(ordering)
+    else:
+        qs = qs.order_by("-score")
+
+    return qs, None
+
+
 class OpportunityListAPIView(APIView):
     """Read-only list for Opportunities with extended search and date filters."""
 
     permission_classes = [IsAdminOrBDManager]
 
     def get(self, request):
-        qs = Opportunity.objects.select_related("vessel", "port").all()
-
-        filterset = OpportunityBandFilter(request.GET, queryset=qs)
-        if filterset.is_valid():
-            qs = filterset.qs
-
-        # open=true|false filter
-        open_param = request.query_params.get("open")
-        if open_param is not None:
-            if open_param.lower() in ("true", "1"):
-                qs = qs.exclude(stage__in=CLOSED_STAGES)
-            elif open_param.lower() in ("false", "0"):
-                qs = qs.filter(stage__in=CLOSED_STAGES)
-
-        # is_inbound=true|false filter
-        inbound_param = request.query_params.get("is_inbound")
-        if inbound_param is not None:
-            if inbound_param.lower() in ("true", "1"):
-                qs = qs.filter(is_inbound=True)
-            elif inbound_param.lower() in ("false", "0"):
-                qs = qs.filter(is_inbound=False)
-
-        # q search filter: vessel name (icontains), IMO/MMSI (istartswith)
-        q = request.query_params.get("q", "").strip()
-        if q:
-            qs = qs.filter(
-                Q(vessel__name__icontains=q)
-                | Q(vessel__imo__istartswith=q)
-                | Q(vessel__mmsi__istartswith=q)
-            )
-
-        # eta_before / eta_after datetime filters with 400 on invalid format
-        eta_before = request.query_params.get("eta_before")
-        if eta_before:
-            dt_before = parse_datetime(eta_before)
-            if dt_before is None:
-                return Response(
-                    {"eta_before": ["Invalid ISO datetime format for eta_before."]},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            qs = qs.filter(eta__lte=dt_before)
-
-        eta_after = request.query_params.get("eta_after")
-        if eta_after:
-            dt_after = parse_datetime(eta_after)
-            if dt_after is None:
-                return Response(
-                    {"eta_after": ["Invalid ISO datetime format for eta_after."]},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            qs = qs.filter(eta__gte=dt_after)
-
-        ordering = request.query_params.get("ordering", "-score")
-        valid_ordering_fields = [
-            "score", "-score", "detected_at", "-detected_at", "eta", "-eta"
-        ]
-        if ordering in valid_ordering_fields:
-            qs = qs.order_by(ordering)
-        else:
-            qs = qs.order_by("-score")
+        qs, error_response = filter_and_order_opportunities(request)
+        if error_response:
+            return error_response
 
         paginator = StandardResultsSetPagination()
         page = paginator.paginate_queryset(qs, request, view=self)
@@ -124,6 +152,91 @@ class OpportunityListAPIView(APIView):
             return paginator.get_paginated_response(serializer.data)
         serializer = OpportunitySerializer(qs, many=True)
         return Response(serializer.data)
+
+
+class OpportunityExportAPIView(APIView):
+    """GET /api/v1/opportunities/export/ — CSV export of leads with injection protection."""
+
+    permission_classes = [IsAdminOrBDManager]
+
+    def get(self, request):
+        qs, error_response = filter_and_order_opportunities(request)
+        if error_response:
+            return error_response
+
+        cap = getattr(settings, "OPPORTUNITY_EXPORT_CAP", 5000)
+        # Fetch cap + 1 in a single query to detect truncation
+        rows = list(qs[: cap + 1])
+        is_truncated = len(rows) > cap
+        if is_truncated:
+            rows = rows[:cap]
+
+        buffer = io.StringIO()
+        buffer.write("\ufeff")  # UTF-8 BOM
+        writer = csv.writer(buffer)
+
+        header = [
+            "score",
+            "band",
+            "zone",
+            "stage",
+            "vessel_name",
+            "imo",
+            "mmsi",
+            "vessel_type",
+            "grt",
+            "dwt",
+            "flag",
+            "port",
+            "port_unlocode",
+            "eta_utc",
+            "eta_source",
+            "is_inbound",
+            "lead_reason",
+            "detected_at_utc",
+        ]
+        writer.writerow(header)
+
+        for opp in rows:
+            v = opp.vessel
+            p = opp.port
+            eta_str = opp.eta.strftime("%Y-%m-%dT%H:%M:%SZ") if opp.eta else ""
+            detected_str = (
+                opp.detected_at.strftime("%Y-%m-%dT%H:%M:%SZ")
+                if opp.detected_at
+                else ""
+            )
+            row = [
+                opp.score,
+                sanitize_csv_cell(opp.band),
+                sanitize_csv_cell(opp.zone),
+                sanitize_csv_cell(opp.stage),
+                sanitize_csv_cell(v.name if v else ""),
+                sanitize_csv_cell(v.imo or "" if v else ""),
+                sanitize_csv_cell(v.mmsi if v else ""),
+                sanitize_csv_cell(v.vessel_type or "" if v else ""),
+                v.grt if v and v.grt is not None else "",
+                v.dwt if v and v.dwt is not None else "",
+                sanitize_csv_cell(v.flag or "" if v else ""),
+                sanitize_csv_cell(p.name if p else ""),
+                sanitize_csv_cell(p.un_locode if p else ""),
+                eta_str,
+                sanitize_csv_cell(opp.eta_source or ""),
+                "yes" if opp.is_inbound else "no",
+                sanitize_csv_cell(opp.lead_reason or ""),
+                detected_str,
+            ]
+            writer.writerow(row)
+
+        now_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        filename = f"leads_{now_utc}_utc.csv"
+
+        response = HttpResponse(buffer.getvalue(), content_type="text/csv; charset=utf-8")
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        if is_truncated:
+            response["X-Export-Truncated"] = "true"
+
+        return response
 
 
 class OpportunityDetailAPIView(APIView):
