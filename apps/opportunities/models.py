@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 from apps.common.constants import (
@@ -53,3 +54,51 @@ class Opportunity(models.Model):
         Not persisted — always computed from the current score value."""
         from services.scoring_service import get_band
         return get_band(self.score)
+
+
+class OpportunityNote(models.Model):
+    opportunity = models.ForeignKey(
+        "Opportunity", on_delete=models.CASCADE, related_name="notes"
+    )
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "vi_opportunity_note"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Note on opp #{self.opportunity_id} by {self.author} @ {self.created_at}"
+
+    def save(self, *args, **kwargs):
+        if self.pk is not None:
+            raise ValueError("OpportunityNote rows are append-only and cannot be updated.")
+        super().save(*args, **kwargs)
+
+
+class OpportunityStageChange(models.Model):
+    opportunity = models.ForeignKey(
+        "Opportunity", on_delete=models.CASCADE, related_name="stage_changes"
+    )
+    from_stage = models.CharField(max_length=30, blank=True)
+    to_stage = models.CharField(max_length=30)
+    changed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    changed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "vi_opportunity_stage_change"
+        ordering = ["-changed_at"]
+
+    def __str__(self):
+        return f"Opp #{self.opportunity_id}: {self.from_stage} -> {self.to_stage} by {self.changed_by}"
+
+    def save(self, *args, **kwargs):
+        if self.pk is not None:
+            raise ValueError("OpportunityStageChange rows are append-only and cannot be updated.")
+        super().save(*args, **kwargs)
+

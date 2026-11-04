@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.contrib import admin
 
-from .models import Opportunity
+from .models import Opportunity, OpportunityNote, OpportunityStageChange
 
 
 class ScoreBandFilter(admin.SimpleListFilter):
@@ -43,3 +43,36 @@ class OpportunityAdmin(admin.ModelAdmin):
     @admin.display(description="Band", ordering="score")
     def display_band(self, obj):
         return obj.band
+
+
+@admin.register(OpportunityNote)
+class OpportunityNoteAdmin(admin.ModelAdmin):
+    list_display = ["opportunity", "author", "created_at"]
+    search_fields = ["opportunity__vessel__name", "text", "author__username"]
+    ordering = ["-created_at"]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(OpportunityStageChange)
+class OpportunityStageChangeAdmin(admin.ModelAdmin):
+    list_display = ["opportunity", "from_stage", "to_stage", "changed_by", "changed_at"]
+    search_fields = ["opportunity__vessel__name", "changed_by__username"]
+    ordering = ["-changed_at"]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
