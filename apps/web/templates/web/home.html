@@ -3,20 +3,139 @@
 
 {% block title %}Lead board — Vessel Intelligence{% endblock title %}
 
+{% block styles %}
+<link rel="stylesheet" href="{% static 'web/css/board.css' %}">
+{% endblock styles %}
+
 {% block content %}
 <div class="page-container">
     <div class="page-header">
         <h1>Lead board</h1>
-        <p class="text-muted">The lead board arrives in phase F3.</p>
     </div>
 
-    <div class="card status-card">
-        <p id="api-status">Checking the API...</p>
+    <!-- Filter Bar -->
+    <div class="filter-bar" role="search" aria-label="Lead board filters">
+        <div class="filter-row">
+            <div class="filter-field">
+                <label for="filter-port">Port</label>
+                <select id="filter-port" name="port">
+                    <option value="">All ports</option>
+                </select>
+            </div>
+
+            <div class="filter-field">
+                <label for="filter-band">Priority band</label>
+                <select id="filter-band" name="band">
+                    <option value="">All</option>
+                    <option value="HOT">HOT</option>
+                    <option value="HIGH">HIGH</option>
+                    <option value="MEDIUM">MEDIUM</option>
+                    <option value="LOW">LOW</option>
+                </select>
+            </div>
+
+            <div class="filter-field">
+                <label for="filter-stage">Stage</label>
+                <select id="filter-stage" name="stage">
+                    <option value="">All open stages</option>
+                    <option value="detected">Detected</option>
+                    <option value="qualifying">Qualifying</option>
+                    <option value="ready_for_review">Ready For Review</option>
+                    <option value="contacted">Contacted</option>
+                    <option value="replied">Replied</option>
+                    <option value="quote_requested">Quote Requested</option>
+                    <option value="quoted">Quoted</option>
+                    <option value="negotiation">Negotiation</option>
+                    <option value="won">Won</option>
+                    <option value="lost">Lost</option>
+                    <option value="follow_up_later">Follow Up Later</option>
+                </select>
+            </div>
+
+            <div class="filter-field">
+                <label for="filter-q">Search</label>
+                <input type="search" id="filter-q" name="q" placeholder="Vessel name, IMO, MMSI">
+            </div>
+
+            <div class="filter-field">
+                <label for="filter-sort">Sort</label>
+                <select id="filter-sort" name="sort">
+                    <option value="-score">Highest score</option>
+                    <option value="eta">Soonest ETA</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="filter-row">
+            <div class="filter-checkboxes">
+                <label class="filter-checkbox">
+                    <input type="checkbox" id="filter-inbound" name="inbound">
+                    <span>Inbound only</span>
+                </label>
+                <label class="filter-checkbox">
+                    <input type="checkbox" id="filter-closed" name="closed">
+                    <span>Include closed leads</span>
+                </label>
+            </div>
+
+            <div class="filter-actions">
+                <button type="button" id="btn-refresh" class="btn btn-secondary">Refresh</button>
+                <span id="updated-time" class="updated-time">Updated --:-- UTC</span>
+                <a id="link-export" class="btn btn-secondary export-link" href="/api/v1/opportunities/export/">Export CSV</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Strip -->
+    <div class="summary-strip" aria-live="polite">
+        <div class="summary-item">
+            <span class="summary-label">Total leads shown:</span>
+            <span id="summary-total" class="summary-value">0</span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-label">HOT leads:</span>
+            <span id="summary-hot" class="summary-value">0</span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-label">Inbound leads:</span>
+            <span id="summary-inbound" class="summary-value">0</span>
+        </div>
+        <span id="summary-note" class="summary-note"></span>
+    </div>
+
+    <!-- 3-Column Board -->
+    <div class="board-columns">
+        <section class="board-column" id="column-24h" aria-label="24 hour priority column">
+            <div class="column-header">
+                <h2 class="column-title">24 hour priority</h2>
+                <span class="column-count">(0)</span>
+            </div>
+            <div class="column-cards" aria-live="polite"></div>
+            <div class="column-load-more-container"></div>
+        </section>
+
+        <section class="board-column" id="column-72h" aria-label="72 hour approach column">
+            <div class="column-header">
+                <h2 class="column-title">72 hour approach</h2>
+                <span class="column-count">(0)</span>
+            </div>
+            <div class="column-cards" aria-live="polite"></div>
+            <div class="column-load-more-container"></div>
+        </section>
+
+        <section class="board-column" id="column-anchorage" aria-label="Anchorage / port column">
+            <div class="column-header">
+                <h2 class="column-title">Anchorage / port</h2>
+                <span class="column-count">(0)</span>
+            </div>
+            <div class="column-cards" aria-live="polite"></div>
+            <div class="column-load-more-container"></div>
+        </section>
     </div>
 </div>
 {% endblock content %}
 
 {% block scripts %}
-<script type="module" src="{% static 'web/js/home.js' %}"></script>
+<script type="module" src="{% static 'web/js/board-logic.js' %}"></script>
+<script type="module" src="{% static 'web/js/board.js' %}"></script>
 {% endblock scripts %}
-

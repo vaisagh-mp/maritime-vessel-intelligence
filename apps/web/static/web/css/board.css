@@ -1,0 +1,376 @@
+/**
+ * apps/web/static/web/css/board.css
+ * Styles for the lead board: filter bar, summary strip, columns, and cards.
+ * Uses only tokens from tokens.css.
+ * WCAG AA contrast ratio (> 4.5:1) in both light and dark themes.
+ */
+
+/* Filter Bar */
+.filter-bar {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-16);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-16);
+}
+
+.filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-16);
+    align-items: flex-end;
+}
+
+.filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    min-width: 140px;
+    flex: 1 1 auto;
+}
+
+.filter-field label {
+    font-size: var(--font-xs);
+    font-weight: 600;
+    color: var(--color-text-muted);
+}
+
+.filter-field select,
+.filter-field input[type="search"] {
+    height: 38px;
+    padding: var(--space-8) var(--space-12);
+    font-size: var(--font-sm);
+    color: var(--color-text);
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+}
+
+.filter-field select:focus,
+.filter-field input[type="search"]:focus {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 1px;
+}
+
+.filter-checkboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-16);
+    align-items: center;
+}
+
+.filter-checkbox {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+    font-size: var(--font-sm);
+    color: var(--color-text);
+    cursor: pointer;
+}
+
+.filter-checkbox input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--color-accent);
+    cursor: pointer;
+}
+
+.filter-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-12);
+    align-items: center;
+    margin-left: auto;
+}
+
+.updated-time {
+    font-size: var(--font-xs);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+}
+
+.btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-8) var(--space-16);
+    font-size: var(--font-sm);
+    font-weight: 500;
+    color: var(--color-text);
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-secondary:hover {
+    background-color: var(--color-surface);
+    border-color: var(--color-text-muted);
+    text-decoration: none;
+}
+
+/* Summary Strip */
+.summary-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-16);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-12) var(--space-16);
+    font-size: var(--font-sm);
+    color: var(--color-text);
+}
+
+.summary-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+}
+
+.summary-label {
+    color: var(--color-text-muted);
+}
+
+.summary-value {
+    font-weight: 700;
+    color: var(--color-text);
+}
+
+.summary-note {
+    font-size: var(--font-xs);
+    color: var(--color-text-muted);
+    margin-left: auto;
+}
+
+/* Board Columns Grid */
+.board-columns {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-16);
+    width: 100%;
+}
+
+@media (min-width: 1000px) {
+    .board-columns {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.board-column {
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-16);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-16);
+    min-height: 400px;
+}
+
+.column-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: var(--space-8);
+    border-bottom: 2px solid var(--color-border);
+}
+
+.column-title {
+    font-size: var(--font-base);
+    font-weight: 700;
+    color: var(--color-text);
+    margin: 0;
+}
+
+.column-count {
+    font-size: var(--font-xs);
+    font-weight: 600;
+    padding: var(--space-4) var(--space-8);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-muted);
+}
+
+.column-cards {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-12);
+    flex: 1;
+}
+
+/* Cards */
+.lead-card {
+    position: relative;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-16);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.lead-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+}
+
+.lead-card:focus-within {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+}
+
+.lead-card.band-hot {
+    border-left: 4px solid var(--band-hot-border);
+}
+
+.lead-card.band-high {
+    border-left: 4px solid var(--band-high-border);
+}
+
+.lead-card.band-medium {
+    border-left: 4px solid var(--band-medium-border);
+}
+
+.lead-card.band-low {
+    border-left: 4px solid var(--band-low-border);
+}
+
+/* Stretched Link */
+.card-stretched-link {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    text-indent: -9999px;
+    overflow: hidden;
+}
+
+/* Card Top Row */
+.card-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-score {
+    font-size: var(--font-sm);
+    font-weight: 700;
+    color: var(--color-text);
+}
+
+/* Card Vessel Row */
+.card-vessel-row {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-8);
+}
+
+.card-vessel-name {
+    font-size: var(--font-base);
+    font-weight: 700;
+    color: var(--color-text);
+}
+
+.card-vessel-link {
+    font-size: var(--font-xs);
+    font-weight: 500;
+    color: var(--color-accent);
+    text-decoration: underline;
+    white-space: nowrap;
+}
+
+.card-vessel-link:hover {
+    color: var(--color-accent-hover);
+}
+
+/* Card Detail Lines */
+.card-line {
+    font-size: var(--font-xs);
+    color: var(--color-text-muted);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    align-items: baseline;
+}
+
+.card-eta-rel {
+    font-weight: 600;
+    color: var(--color-accent);
+}
+
+.card-eta-rel.passed {
+    font-weight: 500;
+    color: var(--color-text-muted);
+}
+
+.card-lead-reason {
+    font-size: var(--font-xs);
+    color: var(--color-text);
+    margin: var(--space-4) 0 0 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.4;
+}
+
+/* Card Footer */
+.card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: var(--space-4);
+    padding-top: var(--space-8);
+    border-top: 1px solid var(--color-border);
+}
+
+.card-stage {
+    font-size: var(--font-xs);
+    font-weight: 500;
+    color: var(--color-text-muted);
+}
+
+.badge-inbound {
+    font-size: var(--font-xs);
+    font-weight: 600;
+    color: var(--color-success);
+    background-color: var(--color-success-bg);
+    border: 1px solid var(--color-success);
+    padding: 2px var(--space-8);
+    border-radius: var(--radius-sm);
+}
+
+/* Column States */
+.column-state {
+    padding: var(--space-24) var(--space-16);
+    text-align: center;
+    font-size: var(--font-sm);
+    color: var(--color-text-muted);
+    background-color: var(--color-surface);
+    border-radius: var(--radius-sm);
+    border: 1px dashed var(--color-border);
+}
+
+.column-error {
+    border-color: var(--color-danger);
+    color: var(--color-danger);
+}
+
+.column-load-more {
+    margin-top: var(--space-8);
+    width: 100%;
+}
