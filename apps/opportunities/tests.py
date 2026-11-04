@@ -1,5 +1,8 @@
+import csv
+import io
+import re
 from django.contrib.auth.models import Group, User
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
 from apps.ports.models import Port
@@ -437,4 +440,164 @@ class OpportunityNotesAndHistoryTests(TestCase):
         sister_opp.refresh_from_db()
         # Score is recalculated for sister opportunity
         self.assertNotEqual(sister_opp.score, original_score)
+
+
+class OpportunityExportTests(TestCase):
+    def setUp(self):
+        admin_group, _ = Group.objects.get_or_create(name="Admin")
+        bd_group, _ = Group.objects.get_or_create(name="BD Manager")
+
+        self.admin_user = User.objects.create_user("admin_export", password="p")
+        self.admin_user.groups.add(admin_group)
+
+        self.bd_user = User.objects.create_user("bd_export", password="p")
+        self.bd_user.groups.add(bd_group)
+
+        self.plain_user = User.objects.create_user("plain_export", password="p")
+
+        self.port = Port.objects.create(
+            name="Singapore", un_locode="SGSIN", latitude=1.2, longitude=103.8,
+            anchorage_latitude=1.25, anchorage_longitude=103.85, geofence_radius_km=30,
+        )
+        self.client = APIClient()
+
+    def test_export_permissions(self):
+        # Admin gets 200
+        self.client.force_authenticate(user=self.admin_user)
+        res_admin = self.client.get("/api/v1/opportunities/export/")
+        self.assertEqual(res_admin.status_code, 200)
+
+        # BD Manager gets 200
+        self.client.force_authenticate(user=self.bd_user)
+        res_bd = self.client.get("/api/v1/opportunities/export/")
+        self.assertEqual(res_bd.status_code, 200)
+
+        # Plain user gets 403
+        self.client.force_authenticate(user=self.plain_user)
+        res_plain = self.client.get("/api/v1/opportunities/export/")
+        self.assertEqual(res_plain.status_code, 403)
+
+        # Anonymous gets 401 or 403
+        anon_client = APIClient()
+        res_anon = anon_client.get("/api/v1/opportunities/export/")
+        self.assertIn(res_anon.status_code, (401, 403))
+
+    def test_export_headers_and_bom_and_columns(self):
+        v = Vessel.objects.create(mmsi="111222333", imo="9111222", name="STAR LEADER", vessel_type="Tanker", grt=25000, dwt=45000, flag="SG")
+        Opportunity.objects.create(vessel=v, port=self.port, zone="24h", stage="detected", lead_reason="Arriving soon")
+
+        self.client.force_authenticate(user=self.bd_user)
+        res = self.client.get("/api/v1/opportunities/export/")
+        self.assertEqual(res.status_code, 200)
+
+        # Content-Type
+        self.assertEqual(res.headers.get("Content-Type"), "text/csv; charset=utf-8")
+
+        # Filename pattern: leads_<YYYY-MM-DD>_utc.csv
+        disp = res.headers.get("Content-Disposition", "")
+        self.assertRegex(disp, r'^attachment; filename="leads_\d{4}-\d{2}-\d{2}_utc\.csv"$')
+
+        # UTF-8 BOM
+        content_bytes = res.content
+        self.assertTrue(content_bytes.startswith(b"\xef\xbb\xbf"))
+
+        # Exact header row
+        csv_text = content_bytes.decode("utf-8-sig")
+        reader = list(csv.reader(io.StringIO(csv_text)))
+        expected_header = [
+            "score", "band", "zone", "stage", "vessel_name", "imo", "mmsi",
+            "vessel_type", "grt", "dwt", "flag", "port", "port_unlocode",
+            "eta_utc", "eta_source", "is_inbound", "lead_reason", "detected_at_utc",
+        ]
+        self.assertEqual(reader[0], expected_header)
+        self.assertEqual(len(reader), 2)  # header + 1 row
+
+    def test_export_filters_and_ordering_match_list_endpoint(self):
+        from datetime import datetime, timezone, timedelta
+
+        now = datetime(2026, 11, 4, 12, 0, 0, tzinfo=timezone.utc)
+        v1 = Vessel.objects.create(mmsi="300001", imo="9300001", name="ALPHA VOYAGER")
+        v2 = Vessel.objects.create(mmsi="300002", imo="9300002", name="ALPHA RUNNER")
+        v3 = Vessel.objects.create(mmsi="300003", imo="9300003", name="BETA TANKER")
+
+        opp1 = Opportunity.objects.create(vessel=v1, port=self.port, zone="24h", stage="detected", is_inbound=True, eta=now + timedelta(days=1))
+        opp2 = Opportunity.objects.create(vessel=v2, port=self.port, zone="72h", stage="lost", is_inbound=True, eta=now + timedelta(days=2))
+        opp3 = Opportunity.objects.create(vessel=v3, port=self.port, zone="24h", stage="detected", is_inbound=True, eta=now + timedelta(days=3))
+
+        self.client.force_authenticate(user=self.bd_user)
+
+        # Filter by q=ALPHA and open=true
+        query = "?q=ALPHA&open=true"
+        list_res = self.client.get(f"/api/v1/opportunities/{query}")
+        list_ids = {item["id"] for item in list_res.json()["results"]}
+
+        export_res = self.client.get(f"/api/v1/opportunities/export/{query}")
+        csv_text = export_res.content.decode("utf-8-sig")
+        reader = list(csv.DictReader(io.StringIO(csv_text)))
+        export_vessel_names = {row["vessel_name"] for row in reader}
+
+        self.assertEqual(len(reader), len(list_ids))
+        self.assertIn("ALPHA VOYAGER", export_vessel_names)
+        self.assertNotIn("ALPHA RUNNER", export_vessel_names)  # closed (stage=lost)
+        self.assertNotIn("BETA TANKER", export_vessel_names)
+
+    def test_export_csv_injection_guard(self):
+        v = Vessel.objects.create(mmsi="400001", name='=HYPERLINK("http://evil.com")')
+        Opportunity.objects.create(vessel=v, port=self.port, zone="24h", stage="detected", lead_reason="+44123456789")
+
+        self.client.force_authenticate(user=self.bd_user)
+        res = self.client.get("/api/v1/opportunities/export/")
+        csv_text = res.content.decode("utf-8-sig")
+        reader = list(csv.DictReader(io.StringIO(csv_text)))
+        row = reader[0]
+
+        # Injected characters prefixed with single quote
+        self.assertEqual(row["vessel_name"], "'=HYPERLINK(\"http://evil.com\")")
+        self.assertEqual(row["lead_reason"], "'+44123456789")
+
+    @override_settings(OPPORTUNITY_EXPORT_CAP=2)
+    def test_export_cap_and_truncation_header(self):
+        for i in range(3):
+            v = Vessel.objects.create(mmsi=f"50000{i}", name=f"CAP VESSEL {i}")
+            Opportunity.objects.create(vessel=v, port=self.port, zone="24h", stage="detected")
+
+        self.client.force_authenticate(user=self.bd_user)
+        res = self.client.get("/api/v1/opportunities/export/")
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.headers.get("X-Export-Truncated"), "true")
+
+        csv_text = res.content.decode("utf-8-sig")
+        reader = list(csv.reader(io.StringIO(csv_text)))
+        # Header + exactly 2 rows
+        self.assertEqual(len(reader), 3)
+
+    def test_export_bad_date_returns_400(self):
+        self.client.force_authenticate(user=self.bd_user)
+        res = self.client.get("/api/v1/opportunities/export/?eta_before=invalid-date")
+        self.assertEqual(res.status_code, 400)
+        self.assertIn("eta_before", res.json())
+
+    def test_export_constant_query_count_for_5_vs_25_rows(self):
+        # 5 opportunities
+        for i in range(5):
+            v = Vessel.objects.create(mmsi=f"60000{i}", name=f"Vessel {i}")
+            Opportunity.objects.create(vessel=v, port=self.port, zone="24h", stage="detected")
+
+        self.client.force_authenticate(user=self.bd_user)
+
+        # 2 permission queries on auth_user_groups + 1 SELECT ... JOIN query = 3 queries
+        with self.assertNumQueries(3):
+            res_5 = self.client.get("/api/v1/opportunities/export/")
+            self.assertEqual(res_5.status_code, 200)
+
+        # Add 20 more opportunities (25 total)
+        for i in range(5, 25):
+            v = Vessel.objects.create(mmsi=f"60000{i}", name=f"Vessel {i}")
+            Opportunity.objects.create(vessel=v, port=self.port, zone="24h", stage="detected")
+
+        # Query count remains exactly 3 (constant, no per-row queries)
+        with self.assertNumQueries(3):
+            res_25 = self.client.get("/api/v1/opportunities/export/")
+            self.assertEqual(res_25.status_code, 200)
+
 
