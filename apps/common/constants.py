@@ -71,10 +71,5 @@ OPPORTUNITY_STAGE_CHOICES = [
 # Stages that mark an Opportunity as no longer "open" for dedup purposes.
 CLOSED_STAGES = {STAGE_WON, STAGE_LOST}
 
-ENRICHMENT_ENDPOINT_LOCATION = "get-vessel-location"
-ENRICHMENT_ENDPOINT_MANAGEMENT = "get-vessel-management-data"
-DISCOVERY_ENDPOINT_VESSELS_BY_AREA = "get-vessels-by-area"
-ENRICHMENT_ENDPOINT_PORT_CALLS_EXPECTED = "port-calls-by-port:expected"
-
 # Vessel type exclusion blocklist lives in settings.VESSEL_TYPE_EXCLUSIONS so it
 # can be overridden per-deployment without a code change.

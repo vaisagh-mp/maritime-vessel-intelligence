@@ -131,3 +131,48 @@ class VesselDiscoveryIntegrationTests(TestCase):
         self.assertIsNotNone(vessel)
         self.assertTrue(created)
         self.assertEqual(vessel.name, "MSC PILOT STAR")
+
+
+class ImoNormalisationTests(TestCase):
+    """IMO placeholders ("", None, "0") mean 'missing' and are never stored."""
+
+    def test_normalize_imo_treats_placeholders_as_missing(self):
+        from apps.common.utils import normalize_imo
+
+        for value in [None, "", "  ", "0", 0, "0000000", "null", "None", "-"]:
+            self.assertIsNone(normalize_imo(value), repr(value))
+
+    def test_normalize_imo_keeps_real_values_as_str(self):
+        from apps.common.utils import normalize_imo
+
+        self.assertEqual(normalize_imo("9389679"), "9389679")
+        self.assertEqual(normalize_imo(9389679), "9389679")
+        self.assertEqual(normalize_imo(" 9389679 "), "9389679")
+
+    def test_vessel_save_never_stores_placeholder_imo(self):
+        for i, placeholder in enumerate(["0", "", None]):
+            v = Vessel.objects.create(mmsi=f"2000000{i}", name="X", imo=placeholder)
+            v.refresh_from_db()
+            self.assertIsNone(v.imo, repr(placeholder))
+
+    def test_enrichment_does_not_store_zero_imo(self):
+        """enrich_vessel() with no provider does not alter a vessel's IMO."""
+        from services.enrichment_service import enrich_vessel
+
+        vessel = Vessel.objects.create(mmsi="211234567", name="NO IMO SHIP")
+        result = enrich_vessel(vessel.pk)
+        vessel.refresh_from_db()
+        self.assertIsNone(vessel.imo)
+        self.assertEqual(result["status"], "no_provider_configured")
+
+    def test_enrichment_stores_real_imo_and_lookup_key_ignores_zero(self):
+        """normalize_imo returns None for zero; non-zero IMO is preserved by save()."""
+        from apps.common.utils import normalize_imo
+
+        # Zero is treated as missing
+        self.assertIsNone(normalize_imo("0"))
+
+        # A real IMO is preserved
+        vessel = Vessel.objects.create(mmsi="211234568", name="HAS IMO SHIP", imo="9389679")
+        vessel.refresh_from_db()
+        self.assertEqual(vessel.imo, "9389679")

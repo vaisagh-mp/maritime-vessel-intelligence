@@ -2,7 +2,7 @@ from django.db import models
 
 
 class EnrichmentLog(models.Model):
-    """Auditable record of every paid DataDocked call — logged on both success
+    """Auditable record of every data provider call — logged on both success
     and failure so credit spend stays traceable.
 
     ``vessel`` is nullable to support port-level calls (e.g. expected-arrivals)

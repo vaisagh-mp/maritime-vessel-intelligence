@@ -1,8 +1,10 @@
 from django.db import models
 
+from apps.common.utils import normalize_imo
+
 
 class Vessel(models.Model):
-    # DataDocked's area-scan endpoint does not return IMO, so MMSI is the
+    # The area-scan discovery endpoint does not return IMO, so MMSI is the
     # discovery dedup key; IMO is filled in later by enrichment when available.
     imo = models.CharField(max_length=20, null=True, blank=True, db_index=True)
     mmsi = models.CharField(max_length=20, unique=True)
@@ -19,6 +21,12 @@ class Vessel(models.Model):
 
     def __str__(self):
         return f"{self.name} (MMSI {self.mmsi})"
+
+    def save(self, *args, **kwargs):
+        # Providers send "", "0" etc. for a missing IMO; never store a placeholder.
+        # (Callers using update_fields must include "imo" for this to persist.)
+        self.imo = normalize_imo(self.imo)
+        super().save(*args, **kwargs)
 
     @property
     def is_enriched(self):

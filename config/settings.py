@@ -131,12 +131,6 @@ SIMPLE_JWT = {
 ROLE_ADMIN = "Admin"
 ROLE_BD_MANAGER = "BD Manager"
 
-# --- DataDocked (AIS / vessel intelligence provider) ---
-DATADOCKED_API_KEY = os.getenv("DATADOCKED_API_KEY", "")
-DATADOCKED_BASE_URL = os.getenv(
-    "DATADOCKED_BASE_URL", "https://datadocked.com/api/vessels_operations"
-)
-
 # Vessel type substrings excluded from discovery (case-insensitive, blocklist —
 # new/unseen commercial types are included by default).
 VESSEL_TYPE_EXCLUSIONS = [

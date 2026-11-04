@@ -9,7 +9,7 @@ def is_vessel_type_excluded(type_specific: str) -> bool:
 def is_aid_to_navigation_mmsi(mmsi: str) -> bool:
     """MMSI numbers starting with 99 are reserved for Aids to Navigation
     (buoys, lights, beacons) under the ITU MID numbering scheme — this is a
-    structural identity check, independent of whatever text DataDocked
+    structural identity check, independent of whatever text the data provider
     returns in typeSpecific."""
     return bool(mmsi) and str(mmsi).startswith("99")
 

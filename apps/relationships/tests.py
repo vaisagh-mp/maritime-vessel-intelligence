@@ -14,15 +14,15 @@ class VesselRelationshipTests(TestCase):
 
     def test_unverified_by_default(self):
         rel = VesselRelationship.objects.create(
-            vessel=self.vessel, company=self.company, role="manager", source="datadocked.com"
+            vessel=self.vessel, company=self.company, role="manager", source="test-source"
         )
         self.assertFalse(rel.verified)
 
     def test_duplicate_vessel_company_role_rejected(self):
         VesselRelationship.objects.create(
-            vessel=self.vessel, company=self.company, role="manager", source="datadocked.com"
+            vessel=self.vessel, company=self.company, role="manager", source="test-source"
         )
         with self.assertRaises(IntegrityError):
             VesselRelationship.objects.create(
-                vessel=self.vessel, company=self.company, role="manager", source="datadocked.com"
+                vessel=self.vessel, company=self.company, role="manager", source="test-source"
             )

@@ -4,7 +4,7 @@ from django.utils import timezone
 from apps.observations.models import VesselObservation
 
 
-def record_observation(vessel, raw_vessel: dict, source="datadocked.com"):
+def record_observation(vessel, raw_vessel: dict, source: str):
     def to_float(value):
         try:
             return float(value)

@@ -4,7 +4,7 @@
         "ASGI",
         "blocklist",
         "createsuperuser",
-        "DATADOCKED",
+        "dateutil",
         "dedup",
         "djangorestframework",
         "dotenv",

@@ -13,8 +13,8 @@ logger = logging.getLogger("vessel_intel")
 
 
 def get_or_create_vessel(raw_vessel: dict):
-    """Creates/updates a Vessel from a raw DataDocked discovery record, keyed
-    by MMSI (the endpoint doesn't return IMO). Returns (vessel, created) or
+    """Creates/updates a Vessel from a raw discovery record (provider-agnostic shape),
+    keyed by MMSI (the area-scan endpoint doesn't return IMO). Returns (vessel, created) or
     (None, False) if excluded by MMSI prefix, implausible speed, type, or name fallback.
     """
     mmsi = raw_vessel.get("mmsi")
