@@ -25,12 +25,43 @@ PRIORITY_CHOICES = [
 RELATIONSHIP_ROLE_OWNER = "owner"
 RELATIONSHIP_ROLE_MANAGER = "manager"
 RELATIONSHIP_ROLE_OPERATOR = "operator"
+RELATIONSHIP_ROLE_TECHNICAL_MANAGER = "technical_manager"
+RELATIONSHIP_ROLE_ISM_MANAGER = "ism_manager"
+RELATIONSHIP_ROLE_BENEFICIAL_OWNER = "beneficial_owner"
 
 RELATIONSHIP_ROLE_CHOICES = [
     (RELATIONSHIP_ROLE_OWNER, "Owner"),
     (RELATIONSHIP_ROLE_MANAGER, "Manager"),
     (RELATIONSHIP_ROLE_OPERATOR, "Operator"),
+    (RELATIONSHIP_ROLE_TECHNICAL_MANAGER, "Technical Manager"),
+    (RELATIONSHIP_ROLE_ISM_MANAGER, "ISM Manager"),
+    (RELATIONSHIP_ROLE_BENEFICIAL_OWNER, "Beneficial Owner"),
 ]
+
+PORT_AREA_INBOUND = "inbound"
+PORT_AREA_IN_PORT = "in_port"
+PORT_AREA_ANCHORAGE = "anchorage"
+PORT_AREA_ANCHORAGE_BOUND = "anchorage_bound"
+PORT_AREA_UNKNOWN = "unknown"
+
+PORT_AREA_CHOICES = [
+    (PORT_AREA_INBOUND, "Inbound"),
+    (PORT_AREA_IN_PORT, "In Port"),
+    (PORT_AREA_ANCHORAGE, "Anchorage"),
+    (PORT_AREA_ANCHORAGE_BOUND, "Anchorage Bound"),
+    (PORT_AREA_UNKNOWN, "Unknown"),
+]
+
+ETA_SOURCE_CALC = "eta_calc"
+ETA_SOURCE_AIS = "ais_eta"
+
+ETA_SOURCE_CHOICES = [
+    (ETA_SOURCE_CALC, "Provider calculated ETA"),
+    (ETA_SOURCE_AIS, "AIS declared ETA"),
+]
+
+SOURCE_MARINETRAFFIC_EXPECTED_ARRIVALS = "marinetraffic:expected_arrivals"
+SOURCE_KPLER_VESSELS = "kpler:vessels"
 
 ZONE_72H = "72h"
 ZONE_24H = "24h"
