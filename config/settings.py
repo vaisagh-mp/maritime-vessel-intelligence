@@ -150,9 +150,28 @@ VESSEL_NAME_EXCLUSION_KEYWORDS = ["PILOT", "SAR AIRCRAFT", "PATROL"]
 # Maximum plausible speed for a commercial vessel (knots)
 MAX_PLAUSIBLE_VESSEL_SPEED_KNOTS = 60
 
-# Expected-arrivals discovery: max pages fetched per port per run (50 credits/page).
-# If a port returns more pages, only the first N are processed and a warning is logged.
-EXPECTED_ARRIVALS_MAX_PAGES_PER_PORT = 3
+# --- Kpler & MarineTraffic integration settings ---
+MARINETRAFFIC_API_KEY = os.getenv("MARINETRAFFIC_API_KEY", "")
+MARINETRAFFIC_BASE_URL = os.getenv(
+    "MARINETRAFFIC_BASE_URL", "https://services.marinetraffic.com/api"
+)
+KPLER_API_KEY = os.getenv("KPLER_API_KEY", "")
+KPLER_GRAPHQL_URL = os.getenv(
+    "KPLER_GRAPHQL_URL", "https://api.kpler.com/v2/maritime/vessels/graphql"
+)
+KPLER_AIS_URL = os.getenv(
+    "KPLER_AIS_URL", "https://api.kpler.com/v2/maritime/ais-latest"
+)
+KPLER_HTTP_TIMEOUT_SECONDS = int(os.getenv("KPLER_HTTP_TIMEOUT_SECONDS", "30"))
+_raw_dir = os.getenv("KPLER_RAW_DIR")
+KPLER_RAW_DIR = Path(_raw_dir) if _raw_dir else (BASE_DIR / "data" / "kpler")
+KPLER_GRAPHQL_PAGE_SIZE = int(os.getenv("KPLER_GRAPHQL_PAGE_SIZE", "100"))
+KPLER_OWNERSHIP_ENABLED = os.getenv("KPLER_OWNERSHIP_ENABLED", "False").lower() in ("true", "1", "yes")
+
+EXPECTED_ARRIVALS_TIMESPAN_DAYS = int(os.getenv("EXPECTED_ARRIVALS_TIMESPAN_DAYS", "14"))
+EXPECTED_ARRIVALS_DAYS_LAST_SIGNAL = int(os.getenv("EXPECTED_ARRIVALS_DAYS_LAST_SIGNAL", "1"))
+EXPECTED_ARRIVALS_GT_MIN = int(os.getenv("EXPECTED_ARRIVALS_GT_MIN", "3000"))
+EXPECTED_ARRIVALS_GT_MAX = int(os.getenv("EXPECTED_ARRIVALS_GT_MAX", "500000"))
 
 # --- Lead scoring engine ---
 SCORING_RELEVANT_VESSEL_SEGMENTS = {
