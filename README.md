@@ -1,5 +1,7 @@
 # Vessel Arrival Intelligence — Phase 1 Backend
 
+> **Status: DataDocked removed; the Kpler integration is under construction, so no data is fetched until it lands.**
+
 Django + DRF + PostgreSQL backend for detecting vessels approaching configured
 service ports, resolving vessel-to-company relationships, and tracking the
 resulting opportunities through a CRM-style lifecycle.
@@ -15,21 +17,21 @@ apps/            Domain modules (ports, vessels, companies, relationships,
                   observations, opportunities, enrichment) — models, admin,
                   DRF serializers/views/urls, tests.
 integrations/     External providers, isolated from Django views/models.
-    datadocked/   HTTP client + response parsers for datadocked.com.
+                  (the data provider (Kpler, added in Steps 4 to 6) will live here)
 services/        Cross-domain business logic (the actual workflows):
     vessel_service.py        vessel upsert + type-exclusion filter
     observation_service.py   append-only observation writer
     opportunity_service.py   dedup + zone classification
     company_service.py       case-insensitive company matching + relationships
     enrichment_service.py    orchestrates enrichment, logs to EnrichmentLog
-tasks/           Scheduled/cron-runnable work (discovery.py).
+tasks/           Scheduled/cron-runnable work.
 utils/           Small shared technical helpers.
 config/          Django settings, URL root, WSGI/ASGI.
 ```
 
 Request flow: **DRF View → Serializer → Service layer → PostgreSQL /
-Integration layer → DataDocked API.** Views never talk to DataDocked or
-contain business logic directly.
+Integration layer → the data provider (Kpler, added in Steps 4 to 6).** Views never talk to
+the data provider directly or contain business logic directly.
 
 ## Setup
 
@@ -37,7 +39,7 @@ contain business logic directly.
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
-cp .env.example .env   # fill in DB + DATADOCKED_API_KEY
+cp .env.example .env   # fill in DB credentials
 # Without DB_NAME set, settings.py falls back to sqlite for quick local runs.
 
 python manage.py migrate
@@ -48,13 +50,6 @@ python manage.py runserver
 ## Running discovery
 
 ```bash
-# One-off / cron (every 15–30 min recommended):
-python manage.py run_discovery
-
-# Also enrich every newly-discovered vessel inline (use sparingly — each
-# enrichment call is billed):
-python manage.py run_discovery --enrich-new
-
 # Enrich one vessel manually:
 python manage.py enrich_vessel <vessel_id>
 # or: POST /api/v1/vessels/{id}/enrich/
@@ -97,8 +92,8 @@ Opportunity PATCH-only stage editing.
   its own trigger (new qualifying vessel, or a manual flag) so one discovery
   batch can't fire hundreds of paid calls at once.
 - **VesselObservation is append-only** — every poll inserts, never updates.
-- **Registry-derived company relationships are `verified=False`** — DataDocked
-  management data is public registry data, not a human-confirmed contact, and
+- **Registry-derived company relationships are `verified=False`** — data
+  from the provider is public registry data, not a human-confirmed contact, and
   must never be treated as equivalent to a verified decision-maker later in
   the pipeline.
 - **Every enrichment call is logged** (success or failure) to `EnrichmentLog`
