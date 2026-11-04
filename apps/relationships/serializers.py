@@ -14,6 +14,9 @@ class VesselRelationshipSerializer(serializers.ModelSerializer):
             "source",
             "verified",
             "last_verified_date",
+            "start_date",
+            "end_date",
+            "is_current",
             "created_at",
             "updated_at",
         ]

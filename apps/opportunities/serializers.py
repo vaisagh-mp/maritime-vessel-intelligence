@@ -15,11 +15,14 @@ class OpportunitySerializer(serializers.ModelSerializer):
             "vessel",
             "port",
             "eta",
+            "eta_source",
             "detected_at",
             "zone",
             "score",
             "band",
             "stage",
+            "is_inbound",
+            "lead_reason",
             "updated_at",
         ]
         read_only_fields = [f for f in fields if f != "stage"]
