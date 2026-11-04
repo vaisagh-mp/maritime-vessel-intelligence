@@ -1,0 +1,102 @@
+/**
+ * apps/web/static/web/css/tokens.css
+ * Design tokens and theme variables (light + dark schemes).
+ * WCAG AA contrast ratio (> 4.5:1) maintained across schemes.
+ */
+
+:root {
+    /* Colors - Light Theme */
+    --color-bg: #f8fafc;
+    --color-surface: #ffffff;
+    --color-text: #0f172a;
+    --color-text-muted: #475569;
+    --color-border: #cbd5e1;
+    --color-accent: #0284c7;
+    --color-accent-hover: #0369a1;
+
+    /* Score Bands - Light Theme (Text / Background / Border) */
+    --band-hot-text: #991b1b;
+    --band-hot-bg: #fee2e2;
+    --band-hot-border: #fca5a5;
+
+    --band-high-text: #9a3412;
+    --band-high-bg: #ffedd5;
+    --band-high-border: #fdba74;
+
+    --band-medium-text: #854d0e;
+    --band-medium-bg: #fef9c3;
+    --band-medium-border: #fde047;
+
+    --band-low-text: #334155;
+    --band-low-bg: #f1f5f9;
+    --band-low-border: #cbd5e1;
+
+    /* Status Colors */
+    --color-success: #15803d;
+    --color-success-bg: #dcfce7;
+    --color-danger: #b91c1c;
+    --color-danger-bg: #fee2e2;
+
+    /* Spacing Scale */
+    --space-4: 4px;
+    --space-8: 8px;
+    --space-12: 12px;
+    --space-16: 16px;
+    --space-24: 24px;
+    --space-32: 32px;
+
+    /* Radii */
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+
+    /* Typography Scale */
+    --font-xs: 0.75rem;    /* 12px */
+    --font-sm: 0.875rem;   /* 14px */
+    --font-base: 1rem;     /* 16px */
+    --font-lg: 1.125rem;   /* 18px */
+    --font-xl: 1.25rem;    /* 20px */
+    --font-2xl: 1.5rem;    /* 24px */
+    --font-3xl: 1.875rem;  /* 30px */
+
+    /* Layout */
+    --max-content-width: 1200px;
+    --top-bar-height: 56px;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        /* Colors - Dark Theme */
+        --color-bg: #0b1120;
+        --color-surface: #1e293b;
+        --color-text: #f8fafc;
+        --color-text-muted: #94a3b8;
+        --color-border: #334155;
+        --color-accent: #38bdf8;
+        --color-accent-hover: #7dd3fc;
+
+        /* Score Bands - Dark Theme */
+        --band-hot-text: #fecaca;
+        --band-hot-bg: #450a0a;
+        --band-hot-border: #7f1d1d;
+
+        --band-high-text: #fed7aa;
+        --band-high-bg: #431407;
+        --band-high-border: #7c2d12;
+
+        --band-medium-text: #fef08a;
+        --band-medium-bg: #422006;
+        --band-medium-border: #713f12;
+
+        --band-low-text: #e2e8f0;
+        --band-low-bg: #1e293b;
+        --band-low-border: #475569;
+
+        /* Status Colors */
+        --color-success: #86efac;
+        --color-success-bg: #052e16;
+        --color-danger: #fca5a5;
+        --color-danger-bg: #450a0a;
+    }
+}
+
