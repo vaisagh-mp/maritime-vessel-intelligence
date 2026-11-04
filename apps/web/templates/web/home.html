@@ -1,0 +1,22 @@
+{% extends "web/base.html" %}
+{% load static %}
+
+{% block title %}Lead board — Vessel Intelligence{% endblock title %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header">
+        <h1>Lead board</h1>
+        <p class="text-muted">The lead board arrives in phase F3.</p>
+    </div>
+
+    <div class="card status-card">
+        <p id="api-status">Checking the API...</p>
+    </div>
+</div>
+{% endblock content %}
+
+{% block scripts %}
+<script type="module" src="{% static 'web/js/home.js' %}"></script>
+{% endblock scripts %}
+

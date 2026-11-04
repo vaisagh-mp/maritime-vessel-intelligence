@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Vessel Intelligence{% endblock title %}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'web/css/tokens.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/components.css' %}">
+</head>
+<body>
+    <a href="#main" class="skip-link">Skip to main content</a>
+
+    {% block nav %}
+    <header class="top-bar">
+        <div class="top-bar-brand">
+            <span class="brand-title">Vessel Intelligence</span>
+        </div>
+        <nav class="top-bar-nav" aria-label="Main navigation">
+            <a href="{% url 'web:home' %}" class="nav-link">Lead board</a>
+            {% if user.is_staff %}
+                <a href="/admin/" class="nav-link">Admin</a>
+            {% endif %}
+        </nav>
+        <div class="top-bar-user">
+            <span class="user-name">{{ user.get_username }}</span>
+            <form method="post" action="{% url 'web:logout' %}" class="logout-form">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-logout">Logout</button>
+            </form>
+        </div>
+    </header>
+    {% endblock nav %}
+
+    <main id="main" class="main-content">
+        {% block content %}{% endblock content %}
+    </main>
+
+    <div id="toast-region" class="toast-region" aria-live="polite"></div>
+
+    {% block scripts %}{% endblock scripts %}
+</body>
+</html>
+
