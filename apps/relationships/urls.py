@@ -1,8 +1,11 @@
-from rest_framework.routers import DefaultRouter
+from django.urls import path
 
-from .views import VesselRelationshipViewSet
+from .views import (
+    VesselRelationshipDetailAPIView,
+    VesselRelationshipListAPIView,
+)
 
-router = DefaultRouter()
-router.register("", VesselRelationshipViewSet, basename="vessel-relationship")
-
-urlpatterns = router.urls
+urlpatterns = [
+    path("", VesselRelationshipListAPIView.as_view(), name="vessel-relationship-list"),
+    path("<int:pk>/", VesselRelationshipDetailAPIView.as_view(), name="vessel-relationship-detail"),
+]
