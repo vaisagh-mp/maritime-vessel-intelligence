@@ -12,16 +12,19 @@ class VesselRelationship(models.Model):
     )
     role = models.CharField(max_length=20, choices=RELATIONSHIP_ROLE_CHOICES)
     source = models.CharField(
-        max_length=100, help_text="e.g. datadocked.com — provenance of this relationship."
+        max_length=100, help_text="Provenance of this relationship, e.g. kpler:vessels."
     )
     verified = models.BooleanField(
         default=False,
         help_text=(
-            "Registry-derived relationships (e.g. from DataDocked management data) "
-            "are unverified public data, not a human-confirmed named decision-maker."
+            "Registry-derived relationships are unverified public data, "
+            "not a human-confirmed named decision-maker."
         ),
     )
     last_verified_date = models.DateField(null=True, blank=True)
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
+    is_current = models.BooleanField(default=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -29,6 +32,7 @@ class VesselRelationship(models.Model):
     class Meta:
         db_table = "vi_vessel_relationship"
         ordering = ["-created_at"]
+        # TODO(step 8): historical entries may need unique_vessel_company_role relaxed
         constraints = [
             models.UniqueConstraint(
                 fields=["vessel", "company", "role"],

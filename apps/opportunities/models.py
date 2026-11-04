@@ -1,6 +1,12 @@
 from django.db import models
 
-from apps.common.constants import CLOSED_STAGES, OPPORTUNITY_STAGE_CHOICES, STAGE_DETECTED, ZONE_CHOICES
+from apps.common.constants import (
+    CLOSED_STAGES,
+    ETA_SOURCE_CHOICES,
+    OPPORTUNITY_STAGE_CHOICES,
+    STAGE_DETECTED,
+    ZONE_CHOICES,
+)
 
 
 class OpenOpportunityManager(models.Manager):
@@ -16,12 +22,15 @@ class Opportunity(models.Model):
         "ports.Port", on_delete=models.CASCADE, related_name="opportunities"
     )
     eta = models.DateTimeField(null=True, blank=True)
+    eta_source = models.CharField(max_length=10, choices=ETA_SOURCE_CHOICES, blank=True)
     detected_at = models.DateTimeField(auto_now_add=True)
     zone = models.CharField(max_length=20, choices=ZONE_CHOICES)
     score = models.IntegerField(default=0)
     stage = models.CharField(
         max_length=30, choices=OPPORTUNITY_STAGE_CHOICES, default=STAGE_DETECTED
     )
+    is_inbound = models.BooleanField(default=False)
+    lead_reason = models.CharField(max_length=200, blank=True)
 
     updated_at = models.DateTimeField(auto_now=True)
 
