@@ -1,3 +1,4 @@
+from django.db import IntegrityError
 from django.test import TestCase
 from django.utils import timezone
 
@@ -26,3 +27,15 @@ class VesselObservationTests(TestCase):
         obs.latitude = 2.0
         with self.assertRaises(ValueError):
             obs.save()
+
+    def test_default_port_area_is_unknown(self):
+        obs = VesselObservation.objects.create(
+            vessel=self.vessel, timestamp=timezone.now(), latitude=1.0, longitude=1.0, source="test-source"
+        )
+        self.assertEqual(obs.port_area, "unknown")
+
+    def test_observation_without_source_raises_error(self):
+        with self.assertRaises(IntegrityError):
+            VesselObservation.objects.create(
+                vessel=self.vessel, timestamp=timezone.now(), latitude=1.0, longitude=1.0, source=None
+            )

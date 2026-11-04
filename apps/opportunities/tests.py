@@ -41,3 +41,6 @@ class OpportunityStagePatchTests(TestCase):
             f"/api/v1/opportunities/{self.opp.id}/", {"stage": "contacted"}, format="json"
         )
         self.assertEqual(response.status_code, 405)
+
+    def test_is_inbound_default_is_false(self):
+        self.assertFalse(self.opp.is_inbound)

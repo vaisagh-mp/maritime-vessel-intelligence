@@ -17,6 +17,34 @@ class PortModelTests(TestCase):
         self.assertIn("AEFJR", str(port))
         self.assertTrue(port.active)
 
+    def test_marinetraffic_port_id_unique_allows_multiple_nulls(self):
+        from django.db import IntegrityError
+
+        p1 = Port.objects.create(
+            name="Port A", un_locode="PORTA", latitude=1, longitude=1,
+            anchorage_latitude=1, anchorage_longitude=1, geofence_radius_km=10,
+            marinetraffic_port_id=None,
+        )
+        p2 = Port.objects.create(
+            name="Port B", un_locode="PORTB", latitude=2, longitude=2,
+            anchorage_latitude=2, anchorage_longitude=2, geofence_radius_km=10,
+            marinetraffic_port_id=None,
+        )
+        self.assertIsNone(p1.marinetraffic_port_id)
+        self.assertIsNone(p2.marinetraffic_port_id)
+
+        Port.objects.create(
+            name="Port C", un_locode="PORTC", latitude=3, longitude=3,
+            anchorage_latitude=3, anchorage_longitude=3, geofence_radius_km=10,
+            marinetraffic_port_id=123,
+        )
+        with self.assertRaises(IntegrityError):
+            Port.objects.create(
+                name="Port D", un_locode="PORTD", latitude=4, longitude=4,
+                anchorage_latitude=4, anchorage_longitude=4, geofence_radius_km=10,
+                marinetraffic_port_id=123,
+            )
+
 
 class SetupPilotPortsCommandTests(TestCase):
     def _port(self, name, locode, active=True):
