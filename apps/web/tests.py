@@ -20,12 +20,14 @@ import os
 import re
 import shutil
 import subprocess
+import tempfile
 from datetime import datetime, timezone
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.staticfiles import finders
-from django.test import Client, TestCase
+from django.core.management import call_command
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from apps.common.constants import CLOSED_STAGES, OPPORTUNITY_STAGE_CHOICES
@@ -447,7 +449,7 @@ class TestWebFoundations(TestCase):
         )
         if result.returncode != 0:
             self.fail(f"Node tests failed:\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}")
-        self.assertIn("pass 41", result.stdout)
+        self.assertIn("pass 45", result.stdout)
 
     # 16. Vessel and Observation API contracts: serializer fields read-only and observations ordered newest first
     def test_vessel_and_observation_api_contracts(self):
@@ -603,3 +605,66 @@ class TestWebFoundations(TestCase):
                 content,
                 f"{filename} must not attach raw DOMContentLoaded listener directly; use onReady instead",
             )
+
+    # 21. Reset filters button with stable id and live status element
+    def test_reset_filters_button_and_status_element(self):
+        self.client.login(username="admin_user", password="adminpassword123")
+        res = self.client.get("/")
+        self.assertEqual(res.status_code, 200)
+        html = res.content.decode("utf-8")
+
+        self.assertIn('id="reset-filters"', html, "Home page must contain button with id='reset-filters'")
+        self.assertIn('id="filter-status"', html, "Home page must contain status element id='filter-status'")
+        self.assertIn('aria-live="polite"', html, "Status element must specify aria-live='polite'")
+        self.client.logout()
+
+    # 22. Production static files: collectstatic with STATIC_HASHING produces hashed imports and manifest
+    def test_collectstatic_hashed_imports(self):
+        with tempfile.TemporaryDirectory() as tmp_static:
+            with override_settings(
+                STATIC_ROOT=tmp_static,
+                STATIC_HASHING=True,
+                STORAGES={
+                    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+                    "staticfiles": {"BACKEND": "apps.web.storage.AggregatedManifestStaticFilesStorage"},
+                },
+            ):
+                call_command("collectstatic", interactive=False, verbosity=0)
+
+                manifest_path = os.path.join(tmp_static, "staticfiles.json")
+                self.assertTrue(os.path.exists(manifest_path), "staticfiles.json manifest was not written")
+
+                with open(manifest_path, "r", encoding="utf-8") as f:
+                    manifest = json.load(f)
+
+                paths = manifest.get("paths", {})
+                vessel_hashed = paths.get("web/js/vessel.js")
+                self.assertIsNotNone(vessel_hashed, "web/js/vessel.js not present in staticfiles manifest")
+
+                collected_vessel_path = os.path.join(tmp_static, vessel_hashed)
+                self.assertTrue(os.path.exists(collected_vessel_path), f"Collected file {collected_vessel_path} does not exist")
+
+                with open(collected_vessel_path, "r", encoding="utf-8") as vf:
+                    vessel_content = vf.read()
+
+                # Assert that imports in vessel.js were rewritten to hashed filenames
+                api_hashed = paths.get("web/js/api.js")
+                ui_hashed = paths.get("web/js/ui.js")
+                logic_hashed = paths.get("web/js/vessel-logic.js")
+
+                self.assertIsNotNone(api_hashed, "web/js/api.js missing from manifest")
+                self.assertIsNotNone(ui_hashed, "web/js/ui.js missing from manifest")
+                self.assertIsNotNone(logic_hashed, "web/js/vessel-logic.js missing from manifest")
+
+                api_base = os.path.basename(api_hashed)
+                ui_base = os.path.basename(ui_hashed)
+                logic_base = os.path.basename(logic_hashed)
+
+                self.assertIn(api_base, vessel_content, f"Hashed import for {api_base} not found in collected vessel.js")
+                self.assertIn(ui_base, vessel_content, f"Hashed import for {ui_base} not found in collected vessel.js")
+                self.assertIn(logic_base, vessel_content, f"Hashed import for {logic_base} not found in collected vessel.js")
+
+                # Assert target hashed files physically exist in STATIC_ROOT
+                self.assertTrue(os.path.exists(os.path.join(tmp_static, api_hashed)))
+                self.assertTrue(os.path.exists(os.path.join(tmp_static, ui_hashed)))
+                self.assertTrue(os.path.exists(os.path.join(tmp_static, logic_hashed)))

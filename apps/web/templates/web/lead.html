@@ -150,7 +150,7 @@
 </div>
 
 <!-- Confirmation Modal for Won / Lost -->
-<dialog id="confirm-stage-dialog" class="stage-dialog">
+<dialog id="confirm-stage-dialog" class="stage-dialog" aria-labelledby="dialog-title">
     <form method="dialog" class="dialog-content">
         <h3 id="dialog-title" class="dialog-title">Confirm stage change</h3>
         <p id="dialog-message" class="dialog-message"></p>
@@ -166,7 +166,7 @@
 {% endblock content %}
 
 {% block scripts %}
-<script type="module" src="{% static 'web/js/stages.js' %}?v={{ static_version }}"></script>
-<script type="module" src="{% static 'web/js/lead-logic.js' %}?v={{ static_version }}"></script>
-<script type="module" src="{% static 'web/js/lead.js' %}?v={{ static_version }}"></script>
+<script type="module" src="{% static 'web/js/stages.js' %}{% if static_version %}?v={{ static_version }}{% endif %}"></script>
+<script type="module" src="{% static 'web/js/lead-logic.js' %}{% if static_version %}?v={{ static_version }}{% endif %}"></script>
+<script type="module" src="{% static 'web/js/lead.js' %}{% if static_version %}?v={{ static_version }}{% endif %}"></script>
 {% endblock scripts %}

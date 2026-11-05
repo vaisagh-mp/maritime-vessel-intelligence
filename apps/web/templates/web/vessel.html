@@ -81,6 +81,6 @@
 {% endblock content %}
 
 {% block scripts %}
-<script type="module" src="{% static 'web/js/vessel-logic.js' %}?v={{ static_version }}"></script>
-<script type="module" src="{% static 'web/js/vessel.js' %}?v={{ static_version }}"></script>
+<script type="module" src="{% static 'web/js/vessel-logic.js' %}{% if static_version %}?v={{ static_version }}{% endif %}"></script>
+<script type="module" src="{% static 'web/js/vessel.js' %}{% if static_version %}?v={{ static_version }}{% endif %}"></script>
 {% endblock scripts %}

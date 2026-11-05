@@ -30,7 +30,9 @@ def compute_static_version():
 
 
 def get_static_version():
-    """Return cached static version; recomputes on each request when DEBUG=True."""
+    """Return cached static version; returns empty string when STATIC_HASHING is on."""
+    if getattr(settings, "STATIC_HASHING", False):
+        return ""
     global _CACHED_STATIC_VERSION
     if getattr(settings, "DEBUG", False):
         return compute_static_version()
