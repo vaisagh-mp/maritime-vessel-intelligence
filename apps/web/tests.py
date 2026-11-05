@@ -170,7 +170,9 @@ class TestWebFoundations(TestCase):
         self.client.login(username="admin_user", password="adminpassword123")
         res_admin = self.client.get("/")
         self.assertEqual(res_admin.status_code, 200)
-        self.assertContains(res_admin, '<span class="user-role">Admin</span>')
+        self.assertContains(res_admin, '<span class="user-role-pill">Role: Admin</span>')
+        self.assertNotContains(res_admin, '<button class="user-role-pill"')
+        self.assertNotContains(res_admin, '<a class="user-role-pill"')
         self.assertContains(res_admin, 'aria-current="page"')
         self.client.logout()
 
@@ -178,7 +180,9 @@ class TestWebFoundations(TestCase):
         self.client.login(username="bd_user", password="bdpassword123")
         res_bd = self.client.get("/")
         self.assertEqual(res_bd.status_code, 200)
-        self.assertContains(res_bd, '<span class="user-role">BD Manager</span>')
+        self.assertContains(res_bd, '<span class="user-role-pill">Role: BD Manager</span>')
+        self.assertNotContains(res_bd, '<button class="user-role-pill"')
+        self.assertNotContains(res_bd, '<a class="user-role-pill"')
         self.assertContains(res_bd, 'aria-current="page"')
         self.client.logout()
 
@@ -306,12 +310,12 @@ class TestWebFoundations(TestCase):
     def test_admin_nav_link_visibility(self):
         self.client.login(username="admin_user", password="adminpassword123")
         res_staff = self.client.get("/")
-        self.assertContains(res_staff, '<a href="/admin/" class="nav-link">Admin</a>')
+        self.assertContains(res_staff, '<a href="/admin/" class="nav-link">Django admin</a>')
         self.client.logout()
 
         self.client.login(username="bd_user", password="bdpassword123")
         res_non_staff = self.client.get("/")
-        self.assertNotContains(res_non_staff, '<a href="/admin/" class="nav-link">Admin</a>')
+        self.assertNotContains(res_non_staff, "Django admin")
         self.client.logout()
 
     # 11. Home page, Vessel page, and Lead page reference static files and finders find them on disk
@@ -441,7 +445,7 @@ class TestWebFoundations(TestCase):
         )
         if result.returncode != 0:
             self.fail(f"Node tests failed:\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}")
-        self.assertIn("pass 36", result.stdout)
+        self.assertIn("pass 38", result.stdout)
 
     # 16. Vessel and Observation API contracts: serializer fields read-only and observations ordered newest first
     def test_vessel_and_observation_api_contracts(self):
@@ -511,3 +515,47 @@ class TestWebFoundations(TestCase):
         self.assertEqual(results[0]["id"], obs_new.id)
         self.assertEqual(results[1]["id"], obs_old.id)
         self.client.logout()
+
+    # 17. Page header is the immediate first child element of <main> on Lead and Vessel pages
+    def test_page_header_is_first_child_of_main(self):
+        self.client.login(username="admin_user", password="adminpassword123")
+
+        # Test lead page
+        res_lead = self.client.get(f"/leads/{self.opportunity.id}/")
+        self.assertEqual(res_lead.status_code, 200)
+        content_lead = res_lead.content.decode("utf-8")
+        main_match_lead = re.search(r"<main[^>]*>\s*(<!--.*?-->\s*)*<header\s+id=[\"']page-header[\"']", content_lead)
+        self.assertIsNotNone(main_match_lead, "#page-header must be the first child of <main> on lead page")
+
+        # Test vessel page
+        res_vessel = self.client.get(f"/vessels/{self.vessel.id}/")
+        self.assertEqual(res_vessel.status_code, 200)
+        content_vessel = res_vessel.content.decode("utf-8")
+        main_match_vessel = re.search(r"<main[^>]*>\s*(<!--.*?-->\s*)*<header\s+id=[\"']page-header[\"']", content_vessel)
+        self.assertIsNotNone(main_match_vessel, "#page-header must be the first child of <main> on vessel page")
+
+        self.client.logout()
+
+    # 18. CSS hygiene: No hardcoded colors outside tokens.css; no !important anywhere in any CSS file
+    def test_css_hygiene(self):
+        css_dir = os.path.join(settings.BASE_DIR, "apps", "web", "static", "web", "css")
+        css_files = [f for f in os.listdir(css_dir) if f.endswith(".css")]
+        self.assertTrue(len(css_files) > 0)
+
+        color_pattern = re.compile(r"(#[0-9a-fA-F]{3,8}\b|rgb\s*\(|rgba\s*\(|hsl\s*\(|hsla\s*\()")
+
+        for filename in css_files:
+            filepath = os.path.join(css_dir, filename)
+            with open(filepath, "r", encoding="utf-8") as f:
+                content = f.read()
+
+            # Rule 1: No !important anywhere in any CSS file
+            self.assertNotIn("!important", content, f"!important found in {filename}")
+
+            # Rule 2: No hex, rgb, rgba, hsl, hsla in any CSS file other than tokens.css
+            if filename != "tokens.css":
+                match = color_pattern.search(content)
+                self.assertIsNone(
+                    match,
+                    f"Hardcoded color '{match.group(0) if match else ''}' found in {filename}",
+                )

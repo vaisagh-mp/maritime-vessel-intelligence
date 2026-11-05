@@ -10,33 +10,41 @@
 {% endblock styles %}
 
 {% block content %}
-<div class="lead-page-container">
-    <!-- Card 1: Header -->
-    <header class="lead-header" id="card-header">
-        <div class="lead-header-top">
-            <a href="/" id="back-to-board-link" class="back-link">&larr; Back to lead board</a>
-            <div id="header-badges" class="header-badges"></div>
+<!-- Card 1: Header (First child of <main>, full width) -->
+<header id="page-header" class="card lead-header">
+    <div class="lead-header-top">
+        <a href="/" id="back-to-board-link" class="back-link">&larr; Back to lead board</a>
+        <div id="header-badges" class="header-badges">
+            <span class="badge band-{{ opportunity.priority_band|lower }}">{{ opportunity.priority_band|title }}</span>
+            <span class="badge badge-score" title="Lead Score">{{ opportunity.priority_score }} pts</span>
+            {% if opportunity.zone %}
+            <span class="badge badge-zone" title="Arrival Zone">{{ opportunity.zone }}</span>
+            {% endif %}
+            {% if opportunity.inbound_status == "expected" or opportunity.inbound_status == "inbound" %}
+            <span class="badge badge-inbound" title="Inbound to port">Inbound</span>
+            {% endif %}
         </div>
-        <div class="lead-title-row">
-            <h1 class="lead-title">
-                <a id="header-vessel-link" class="lead-vessel-link" href="/vessels/{{ opportunity.vessel.id }}/">{{ opportunity.vessel.name }}</a>
-            </h1>
-            <div class="lead-subtitle" id="header-subtitle">
-                <span>IMO: <strong id="header-imo">{{ opportunity.vessel.imo|default:"—" }}</strong></span>
-                <span>MMSI: <strong id="header-mmsi">{{ opportunity.vessel.mmsi|default:"—" }}</strong></span>
-                <span>Type: <strong id="header-type">{{ opportunity.vessel.vessel_type|default:"—" }}</strong></span>
-                <span>GRT: <strong id="header-grt">{% if opportunity.vessel.grt %}{{ opportunity.vessel.grt }}{% else %}—{% endif %}</strong></span>
-                <span>Flag: <strong id="header-flag">{{ opportunity.vessel.flag|default:"—" }}</strong></span>
-                <span>Port: <strong id="header-port">{{ opportunity.port.name }} ({{ opportunity.port.un_locode }})</strong></span>
-            </div>
-            <div class="lead-eta-row" id="header-eta-row">
-                <span id="header-eta-text">ETA: Loading...</span>
-            </div>
-            <p id="header-lead-reason" class="lead-reason-box">{{ opportunity.lead_reason|default:"No lead rationale recorded." }}</p>
+    </div>
+    <div class="lead-title-row">
+        <h1 class="lead-title">
+            <a id="header-vessel-link" class="lead-vessel-link" href="/vessels/{{ opportunity.vessel.id }}/">{{ opportunity.vessel.name }}</a>
+        </h1>
+        <div class="lead-subtitle" id="header-subtitle">
+            <span>IMO: <strong id="header-imo">{{ opportunity.vessel.imo|default:"—" }}</strong></span>
+            <span>MMSI: <strong id="header-mmsi">{{ opportunity.vessel.mmsi|default:"—" }}</strong></span>
+            <span>Type: <strong id="header-type">{{ opportunity.vessel.vessel_type|default:"—" }}</strong></span>
+            <span>GRT: <strong id="header-grt">{% if opportunity.vessel.grt %}{{ opportunity.vessel.grt }}{% else %}—{% endif %}</strong></span>
+            <span>Flag: <strong id="header-flag">{{ opportunity.vessel.flag|default:"—" }}</strong></span>
+            <span>Port: <strong id="header-port">{{ opportunity.port.name }} ({{ opportunity.port.un_locode }})</strong></span>
         </div>
-    </header>
+        <div class="lead-eta-row" id="header-eta-row">
+            <span id="header-eta-text">{% if opportunity.eta %}ETA: {{ opportunity.eta|date:"d M Y H:i" }} UTC{% else %}ETA: None recorded{% endif %}</span>
+        </div>
+        <p id="header-lead-reason" class="lead-reason-box">{{ opportunity.lead_reason|default:"No lead rationale recorded." }}</p>
+    </div>
+</header>
 
-    <div class="lead-grid">
+<div class="lead-grid">
         <!-- Left Column: Stage & Notes -->
         <div class="lead-col">
             <!-- Card 2: Stage & Pipeline -->
@@ -140,7 +148,6 @@
             </div>
         </form>
     </dialog>
-</div>
 {% endblock content %}
 
 {% block scripts %}
@@ -148,3 +155,4 @@
 <script type="module" src="{% static 'web/js/lead-logic.js' %}"></script>
 <script type="module" src="{% static 'web/js/lead.js' %}"></script>
 {% endblock scripts %}
+

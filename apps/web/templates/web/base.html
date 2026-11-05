@@ -21,15 +21,15 @@
         <nav class="top-bar-nav" aria-label="Main navigation">
             <a href="{% url 'web:home' %}" class="nav-link{% if request.resolver_match.url_name == 'home' %} active{% endif %}"{% if request.resolver_match.url_name == 'home' %} aria-current="page"{% endif %}>Lead board</a>
             {% if user.is_staff %}
-                <a href="/admin/" class="nav-link">Admin</a>
+                <a href="/admin/" class="nav-link">Django admin</a>
             {% endif %}
         </nav>
         <div class="top-bar-user">
             <span class="user-name">{{ user.get_username }}</span>
             {% if web_role == "admin" %}
-                <span class="user-role">Admin</span>
+                <span class="user-role-pill">Role: Admin</span>
             {% elif web_role == "bd_manager" %}
-                <span class="user-role">BD Manager</span>
+                <span class="user-role-pill">Role: BD Manager</span>
             {% endif %}
             <form method="post" action="{% url 'web:logout' %}" class="logout-form">
                 {% csrf_token %}
@@ -39,7 +39,7 @@
     </header>
     {% endblock nav %}
 
-    <main id="main" class="main-content"{% block main_attrs %}{% endblock main_attrs %}>
+    <main id="main" class="main-content{% block main_class %}{% endblock main_class %}"{% block main_attrs %}{% endblock main_attrs %}>
         {% block content %}{% endblock content %}
     </main>
 
@@ -48,4 +48,3 @@
     {% block scripts %}{% endblock scripts %}
 </body>
 </html>
-
