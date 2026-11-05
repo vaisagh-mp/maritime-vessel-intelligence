@@ -33,7 +33,7 @@ export function getCookie(name) {
 /**
  * Perform an authenticated API request using session cookies and CSRF protection.
  */
-export async function request(method, url, body = null) {
+export async function request(method, url, body = null, timeoutMs = 20000) {
     const headers = {
         "Accept": "application/json",
     };
@@ -47,17 +47,40 @@ export async function request(method, url, body = null) {
         }
     }
 
+    const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+    const timer = controller && timeoutMs > 0 ? setTimeout(() => {
+        controller.abort();
+    }, timeoutMs) : null;
+
     const options = {
         method,
         headers,
         credentials: "same-origin",
     };
 
+    if (controller) {
+        options.signal = controller.signal;
+    }
+
     if (body !== null && isNonGet) {
         options.body = typeof body === "string" ? body : JSON.stringify(body);
     }
 
-    const response = await fetch(url, options);
+    let response;
+    try {
+        response = await fetch(url, options);
+    } catch (err) {
+        if (controller && controller.signal.aborted) {
+            throw new ApiError(
+                "Request timed out. Please retry.",
+                408,
+                "The server took too long to respond (20s)."
+            );
+        }
+        throw err;
+    } finally {
+        if (timer) clearTimeout(timer);
+    }
 
     if (response.status === 401 || response.status === 403) {
         const nextPath = encodeURIComponent(window.location.pathname + window.location.search);
@@ -109,8 +132,8 @@ export async function request(method, url, body = null) {
 }
 
 export const api = {
-    get: (url) => request("GET", url),
-    post: (url, body) => request("POST", url, body),
-    patch: (url, body) => request("PATCH", url, body),
+    get: (url, timeoutMs = 20000) => request("GET", url, null, timeoutMs),
+    post: (url, body, timeoutMs = 20000) => request("POST", url, body, timeoutMs),
+    patch: (url, body, timeoutMs = 20000) => request("PATCH", url, body, timeoutMs),
 };
 

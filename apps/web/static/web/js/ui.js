@@ -183,3 +183,75 @@ export function toast(message, kind = "info") {
         }
     }, 5000);
 }
+
+/**
+ * Robust DOM ready handler.
+ * If document.readyState === "loading", listens for DOMContentLoaded.
+ * Otherwise, invokes callback immediately.
+ * @param {Function} fn
+ */
+export function onReady(fn) {
+    if (typeof document === "undefined") return;
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", fn, { once: true });
+    } else {
+        fn();
+    }
+}
+
+/**
+ * Register global error and unhandledrejection handlers to surface toast notifications.
+ */
+export function registerGlobalErrorHandlers() {
+    if (typeof window === "undefined") return;
+    if (window.__globalErrorHandlersRegistered) return;
+    window.__globalErrorHandlersRegistered = true;
+
+    window.addEventListener("error", (event) => {
+        const msg = event.message || "An unexpected error occurred.";
+        console.error("Global window error:", event.error || msg);
+        toast(formatErrorMessage(msg), "error");
+    });
+
+    window.addEventListener("unhandledrejection", (event) => {
+        const reason = event.reason;
+        const msg =
+            (reason && (reason.message || reason.detail)) ||
+            String(reason) ||
+            "Unhandled promise rejection.";
+        console.error("Unhandled promise rejection:", reason);
+        toast(formatErrorMessage(msg), "error");
+    });
+}
+
+/**
+ * Render a full page crash card when a page controller fails to initialize.
+ * @param {HTMLElement} container
+ * @param {string} title
+ * @param {Error|any} error
+ */
+export function renderPageCrash(container, title, error) {
+    if (!container) return;
+    console.error(title, error);
+    while (container.firstChild) {
+        container.removeChild(container.firstChild);
+    }
+    const card = el(
+        "div",
+        { class: "card page-crash-card", role: "alert" },
+        el("h2", { class: "page-crash-title" }, "Something went wrong while loading this page"),
+        el("p", { class: "page-crash-text" }, "An error prevented this page from displaying correctly."),
+        el(
+            "details",
+            { class: "page-crash-details", open: true },
+            el("summary", {}, "Technical details"),
+            el("pre", { class: "page-crash-pre" }, error?.stack || error?.message || String(error))
+        ),
+        el(
+            "div",
+            { class: "page-crash-actions" },
+            el("button", { type: "button", class: "btn btn-primary", onClick: () => window.location.reload() }, "Reload")
+        )
+    );
+    container.appendChild(card);
+}
