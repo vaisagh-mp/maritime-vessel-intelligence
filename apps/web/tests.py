@@ -1,19 +1,22 @@
 """
 apps/web/tests.py
 
-Comprehensive tests for Frontend F0, F1, F2 & F3:
+Comprehensive tests for Frontend F0 to F4:
 - Authentication & route protection (RoleRequiredMixin: admin & bd_manager vs no-role 403)
 - Navigation and role visibility (web_user_role context processor)
-- Static file references & file existence
+- Vessel detail page (/vessels/<id>/): 200 for roles, 404 for missing, data-vessel-id attribute
+- Lead placeholder page (/leads/<id>/)
+- Static file references & file existence (vessel.css, vessel.js, vessel-logic.js)
 - Security rules: no inline scripts/styles, no unsafe DOM sinks
 - Centralized fetch() policy
-- Placeholders for vessels and leads
-- Node.js test execution for board-logic pure functions
+- Node.js test execution for board-logic and vessel-logic pure functions
+- Vessel and Observation API serialization contracts and ordering
 """
 
 import os
 import shutil
 import subprocess
+from datetime import datetime, timezone
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
@@ -21,11 +24,16 @@ from django.contrib.staticfiles import finders
 from django.test import Client, TestCase
 from django.urls import reverse
 
+from apps.observations.models import VesselObservation
+from apps.observations.serializers import VesselObservationSerializer
+from apps.vessels.models import Vessel
+from apps.vessels.serializers import VesselSerializer
+
 User = get_user_model()
 
 
 class TestWebFoundations(TestCase):
-    """Test suite for Frontend F0-F3 web views, security, and access control."""
+    """Test suite for Frontend F0-F4 web views, security, access control, and contracts."""
 
     def setUp(self):
         self.client = Client()
@@ -55,9 +63,31 @@ class TestWebFoundations(TestCase):
             is_staff=False,
         )
 
+        # Test vessel
+        self.vessel = Vessel.objects.create(
+            imo="9811000",
+            mmsi="123456789",
+            name="EVER GIVEN",
+            vessel_type="Container Ship",
+            flag="Panama",
+            year_built=2018,
+            dwt=199692,
+            grt=219079,
+            length=399.9,
+            beam=58.8,
+            draught=16.0,
+            callsign="H3RC",
+            vessel_size_segment="Ultra Large Container Ship",
+            ship_id="MT-9811000",
+            vessel_type_code="CONT",
+            last_dry_dock="2023-05-10",
+            last_renewal_survey="2023-05-12",
+        )
+
     # 1. Anonymous GET / redirects to /login/?next=/
     def test_anonymous_get_home_redirects_to_login(self):
-        for path in ["/", "/vessels/1/", "/leads/1/"]:
+        paths = ["/", f"/vessels/{self.vessel.id}/", "/leads/1/"]
+        for path in paths:
             response = self.client.get(path)
             self.assertEqual(response.status_code, 302, f"Failed for {path}")
             self.assertIn(f"/login/?next={path}", response.headers["Location"])
@@ -80,7 +110,7 @@ class TestWebFoundations(TestCase):
 
     # 3. Access control: Admin & BD Manager get 200, user with no role gets 403 friendly page
     def test_role_access_and_no_access_page(self):
-        paths = ["/", "/vessels/1/", "/leads/1/"]
+        paths = ["/", f"/vessels/{self.vessel.id}/", "/leads/1/"]
 
         # User with no role gets 403 on all pages
         self.client.login(username="plain_user", password="plainpassword123")
@@ -125,19 +155,32 @@ class TestWebFoundations(TestCase):
         self.assertContains(res_bd, 'aria-current="page"')
         self.client.logout()
 
-    # 5. Placeholders content check
-    def test_placeholder_pages_content(self):
+    # 5. Vessel detail view: 200 with data-vessel-id, 404 for unknown ID, placeholder template gone
+    def test_vessel_detail_view_and_placeholders(self):
         self.client.login(username="bd_user", password="bdpassword123")
 
-        res_vessel = self.client.get("/vessels/42/")
+        # Real vessel page
+        res_vessel = self.client.get(f"/vessels/{self.vessel.id}/")
         self.assertEqual(res_vessel.status_code, 200)
-        self.assertContains(res_vessel, "This page arrives in phase F4")
-        self.assertContains(res_vessel, 'href="/"')
+        self.assertContains(res_vessel, f'data-vessel-id="{self.vessel.id}"')
+        self.assertContains(res_vessel, "EVER GIVEN")
+        self.assertContains(res_vessel, "vessel.js")
+        self.assertContains(res_vessel, "vessel-logic.js")
+        self.assertContains(res_vessel, "vessel.css")
 
+        # Unknown vessel returns 404
+        res_404 = self.client.get("/vessels/999999/")
+        self.assertEqual(res_404.status_code, 404)
+
+        # Old placeholder template must be gone
+        templates_dir = os.path.join(settings.BASE_DIR, "apps", "web", "templates", "web")
+        old_template_path = os.path.join(templates_dir, "vessel_placeholder.html")
+        self.assertFalse(os.path.exists(old_template_path), "vessel_placeholder.html should be removed")
+
+        # Lead placeholder still works
         res_lead = self.client.get("/leads/42/")
         self.assertEqual(res_lead.status_code, 200)
         self.assertContains(res_lead, "This page arrives in phase F5")
-        self.assertContains(res_lead, 'href="/"')
 
         self.client.logout()
 
@@ -167,11 +210,14 @@ class TestWebFoundations(TestCase):
         self.assertNotContains(res_non_staff, '<a href="/admin/" class="nav-link">Admin</a>')
         self.client.logout()
 
-    # 8. Home page references static files and finders find them on disk
+    # 8. Home page and Vessel detail page reference static files and finders find them on disk
     def test_static_files_referenced_and_exist(self):
         self.client.login(username="admin_user", password="adminpassword123")
-        response = self.client.get("/")
-        content = response.content.decode("utf-8")
+        res_home = self.client.get("/")
+        content_home = res_home.content.decode("utf-8")
+
+        res_vessel = self.client.get(f"/vessels/{self.vessel.id}/")
+        content_vessel = res_vessel.content.decode("utf-8")
 
         expected_statics = [
             "web/css/tokens.css",
@@ -180,13 +226,21 @@ class TestWebFoundations(TestCase):
             "web/css/board.css",
             "web/js/board-logic.js",
             "web/js/board.js",
+            "web/css/vessel.css",
+            "web/js/vessel-logic.js",
+            "web/js/vessel.js",
         ]
 
         for rel_path in expected_statics:
-            self.assertIn(rel_path, content, f"Static reference '{rel_path}' missing from home page")
+            self.assertTrue(
+                rel_path in content_home or rel_path in content_vessel,
+                f"Static reference '{rel_path}' missing from templates"
+            )
             found_path = finders.find(rel_path)
             self.assertIsNotNone(found_path, f"Static file '{rel_path}' not found by finders")
             self.assertTrue(os.path.exists(found_path), f"File on disk '{found_path}' does not exist")
+
+        self.client.logout()
 
     # 9. No template contains inline <script> body or style= attribute
     def test_no_inline_scripts_or_styles_in_templates(self):
@@ -244,13 +298,13 @@ class TestWebFoundations(TestCase):
             else:
                 self.assertNotIn("fetch(", content, f"Disallowed fetch() found in {filename}")
 
-    # 12. Run JavaScript pure functions unit tests using node --test
-    def test_node_board_logic_tests(self):
+    # 12. Run JavaScript pure functions unit tests using node --test (both board-logic and vessel-logic)
+    def test_node_unit_tests(self):
         node_bin = shutil.which("node")
         if not node_bin:
             self.skipTest("Node.js is not available on PATH.")
 
-        test_file = os.path.join(
+        tests_dir = os.path.join(
             settings.BASE_DIR,
             "apps",
             "web",
@@ -258,15 +312,87 @@ class TestWebFoundations(TestCase):
             "web",
             "js",
             "tests",
-            "board-logic.test.mjs",
         )
-        self.assertTrue(os.path.exists(test_file), f"Test file {test_file} does not exist.")
+        board_test = os.path.join(tests_dir, "board-logic.test.mjs")
+        vessel_test = os.path.join(tests_dir, "vessel-logic.test.mjs")
+
+        self.assertTrue(os.path.exists(board_test), f"Test file {board_test} does not exist.")
+        self.assertTrue(os.path.exists(vessel_test), f"Test file {vessel_test} does not exist.")
 
         result = subprocess.run(
-            [node_bin, "--test", test_file],
+            [node_bin, "--test", board_test, vessel_test],
             capture_output=True,
             text=True,
         )
         if result.returncode != 0:
-            self.fail(f"Node board-logic tests failed:\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}")
-        self.assertIn("pass 10", result.stdout)
+            self.fail(f"Node tests failed:\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}")
+        self.assertIn("pass 26", result.stdout)
+
+    # 13. Vessel and Observation API contracts: serializer fields read-only and observations ordered newest first
+    def test_vessel_and_observation_api_contracts(self):
+        # Vessel serializer fields
+        v_serializer = VesselSerializer(self.vessel)
+        v_data = v_serializer.data
+
+        expected_vessel_fields = [
+            "id", "imo", "mmsi", "name", "vessel_type", "dwt", "grt", "flag",
+            "year_built", "length", "beam", "draught", "callsign", "ship_id",
+            "vessel_type_code", "vessel_size_segment", "last_dry_dock",
+            "last_renewal_survey", "created_at", "updated_at",
+        ]
+        for field in expected_vessel_fields:
+            self.assertIn(field, v_data, f"Vessel field '{field}' missing from serializer data")
+            self.assertIn(field, VesselSerializer.Meta.read_only_fields)
+
+        # Create two observations with distinct timestamps
+        obs_old = VesselObservation.objects.create(
+            vessel=self.vessel,
+            timestamp=datetime(2026, 11, 4, 10, 0, tzinfo=timezone.utc),
+            latitude=1.20000,
+            longitude=103.80000,
+            speed=12.5,
+            course=90.0,
+            source="test:kpler",
+            navigational_status=0,
+            port_area="inbound",
+            destination="SINGAPORE",
+            next_port_unlocode="SGSIN",
+        )
+        obs_new = VesselObservation.objects.create(
+            vessel=self.vessel,
+            timestamp=datetime(2026, 11, 5, 8, 0, tzinfo=timezone.utc),
+            latitude=1.25000,
+            longitude=103.85000,
+            speed=5.0,
+            course=45.0,
+            source="test:kpler",
+            navigational_status=1,
+            port_area="anchorage",
+            destination="SINGAPORE",
+            next_port_unlocode="SGSIN",
+        )
+
+        obs_serializer = VesselObservationSerializer(obs_new)
+        obs_data = obs_serializer.data
+
+        expected_obs_fields = [
+            "id", "vessel", "timestamp", "latitude", "longitude", "speed", "course",
+            "source", "navigational_status", "destination", "next_port_unlocode",
+            "eta_calc", "eta_updated", "last_port", "last_port_unlocode",
+            "last_port_time", "current_port", "port_area",
+        ]
+        for field in expected_obs_fields:
+            self.assertIn(field, obs_data, f"Observation field '{field}' missing from serializer data")
+            self.assertIn(field, VesselObservationSerializer.Meta.read_only_fields)
+
+        # Query GET /api/v1/vessels/{id}/observations/ via BD client
+        self.client.login(username="bd_user", password="bdpassword123")
+        res_obs = self.client.get(f"/api/v1/vessels/{self.vessel.id}/observations/")
+        self.assertEqual(res_obs.status_code, 200)
+
+        results = res_obs.data.get("results", res_obs.data)
+        self.assertGreaterEqual(len(results), 2)
+        # Newest observation (obs_new) must come first
+        self.assertEqual(results[0]["id"], obs_new.id)
+        self.assertEqual(results[1]["id"], obs_old.id)
+        self.client.logout()
