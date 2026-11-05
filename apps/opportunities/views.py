@@ -279,7 +279,30 @@ class OpportunityDetailAPIView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         with transaction.atomic():
-            opportunity = serializer.save()
+            opportunity = (
+                Opportunity.objects.select_for_update()
+                .select_related("vessel", "port")
+                .filter(pk=pk)
+                .first()
+            )
+            if not opportunity:
+                return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+            if "expected_stage" in request.data:
+                expected_stage = request.data.get("expected_stage")
+                if expected_stage != opportunity.stage:
+                    return Response(
+                        {
+                            "detail": (
+                                "This lead's stage was changed by someone else. "
+                                "Reload the page to see the latest stage."
+                            )
+                        },
+                        status=status.HTTP_409_CONFLICT,
+                    )
+
+            old_stage = opportunity.stage
+            opportunity = serializer.update(opportunity, serializer.validated_data)
             stage_changed = (old_stage != opportunity.stage)
 
             if stage_changed:

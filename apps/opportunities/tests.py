@@ -385,6 +385,88 @@ class OpportunityNotesAndHistoryTests(TestCase):
             self.assertEqual(self.client.patch(path, {}).status_code, 405)
             self.assertEqual(self.client.delete(path).status_code, 405)
 
+    def test_expected_stage_match_succeeds(self):
+        self.client.force_authenticate(user=self.bd_user)
+        res = self.client.patch(
+            f"/api/v1/opportunities/{self.opp.id}/",
+            {"stage": "qualifying", "expected_stage": "detected"},
+            format="json",
+        )
+        self.assertEqual(res.status_code, 200)
+        self.opp.refresh_from_db()
+        self.assertEqual(self.opp.stage, "qualifying")
+        self.assertEqual(self.opp.stage_changes.count(), 1)
+
+    def test_expected_stage_mismatch_returns_409_writes_nothing(self):
+        self.client.force_authenticate(user=self.bd_user)
+        initial_hist_count = self.opp.stage_changes.count()
+        initial_note_count = self.opp.notes.count()
+
+        res = self.client.patch(
+            f"/api/v1/opportunities/{self.opp.id}/",
+            {
+                "stage": "qualifying",
+                "expected_stage": "contacted",
+                "note": "A note that must not be saved",
+            },
+            format="json",
+        )
+        self.assertEqual(res.status_code, 409)
+        self.assertEqual(
+            res.json()["detail"],
+            "This lead's stage was changed by someone else. Reload the page to see the latest stage.",
+        )
+        self.opp.refresh_from_db()
+        self.assertEqual(self.opp.stage, "detected")
+        self.assertEqual(self.opp.stage_changes.count(), initial_hist_count)
+        self.assertEqual(self.opp.notes.count(), initial_note_count)
+
+    def test_expected_stage_absent_behaves_as_before(self):
+        self.client.force_authenticate(user=self.bd_user)
+        res = self.client.patch(
+            f"/api/v1/opportunities/{self.opp.id}/",
+            {"stage": "contacted"},
+            format="json",
+        )
+        self.assertEqual(res.status_code, 200)
+        self.opp.refresh_from_db()
+        self.assertEqual(self.opp.stage, "contacted")
+
+    def test_same_stage_patch_with_expected_stage_writes_no_history(self):
+        self.client.force_authenticate(user=self.bd_user)
+        res = self.client.patch(
+            f"/api/v1/opportunities/{self.opp.id}/",
+            {"stage": "detected", "expected_stage": "detected"},
+            format="json",
+        )
+        self.assertEqual(res.status_code, 200)
+        self.opp.refresh_from_db()
+        self.assertEqual(self.opp.stage, "detected")
+        self.assertEqual(self.opp.stage_changes.count(), 0)
+
+    def test_concurrency_sequential_patch_conflict(self):
+        self.client.force_authenticate(user=self.bd_user)
+        # First request succeeds
+        res1 = self.client.patch(
+            f"/api/v1/opportunities/{self.opp.id}/",
+            {"stage": "contacted", "expected_stage": "detected"},
+            format="json",
+        )
+        self.assertEqual(res1.status_code, 200)
+        self.opp.refresh_from_db()
+        self.assertEqual(self.opp.stage, "contacted")
+
+        # Second request with original stage returns 409
+        res2 = self.client.patch(
+            f"/api/v1/opportunities/{self.opp.id}/",
+            {"stage": "qualifying", "expected_stage": "detected"},
+            format="json",
+        )
+        self.assertEqual(res2.status_code, 409)
+        self.assertIn("This lead's stage was changed by someone else", res2.json()["detail"])
+        self.opp.refresh_from_db()
+        self.assertEqual(self.opp.stage, "contacted")
+
     def test_csrf_protection_on_notes(self):
         from django.test import Client
 
