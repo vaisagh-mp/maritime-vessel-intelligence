@@ -123,7 +123,7 @@ class OpportunityPayloadAndQueryCountTests(TestCase):
         # Create 5 opportunities
         for i in range(5):
             v = Vessel.objects.create(mmsi=f"50000{i}", name=f"Vessel {i}")
-            Opportunity.objects.create(vessel=v, port=self.port, zone="24h", stage="detected")
+            Opportunity.objects.create(vessel=v, port=self.port, zone="24h", stage="detected", score=50)
 
         # DRF IsAdminOrBDManager checks Admin & BD Manager groups (2 queries),
         # plus COUNT(*) (1 query) and SELECT ... JOIN (1 query) = 4 queries total.
@@ -505,9 +505,12 @@ class OpportunityNotesAndHistoryTests(TestCase):
         sister_vessel = Vessel.objects.create(mmsi="999888222", name="OCEAN ATLANTIC")
         VesselRelationship.objects.create(vessel=sister_vessel, company=company, role="owner", source="test")
 
+        from services.opportunity_service import recalculate_score
         sister_opp = Opportunity.objects.create(
             vessel=sister_vessel, port=self.port, zone="24h", stage="detected"
         )
+        recalculate_score(sister_opp)
+        sister_opp.refresh_from_db()
         original_score = sister_opp.score
 
         self.client.force_authenticate(user=self.bd_user)

@@ -390,7 +390,15 @@ class NegativeClampTests(TestCase):
             zone="72h", eta=None,
         )
         score = calculate_score(new_opp)
-        self.assertGreaterEqual(score, 0)
+        self.assertEqual(score, 0)
+
+    def test_previous_lost_does_not_trigger_previous_enquiry_bonus(self):
+        """Part F: STAGE_LOST only gets -20 penalty, never +25 previous enquiry bonus."""
+        from services.scoring_service import _score_previous_enquiry, _score_recent_negative
+        _opportunity(self.vessel, self.port, stage=STAGE_LOST)
+        new_opp = _opportunity(self.vessel, _port(un_locode="SGSIN", name="Singapore"))
+        self.assertEqual(_score_previous_enquiry(self.vessel, new_opp), 0)
+        self.assertEqual(_score_recent_negative(self.vessel, new_opp), -20)
 
 
 # ---------------------------------------------------------------------------
