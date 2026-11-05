@@ -1,6 +1,6 @@
 /**
  * apps/web/static/web/js/ui.js
- * DOM manipulation, data formatters, badges, and notification toasts.
+ * DOM manipulation, data formatters, badges, notification toasts, and shared error states.
  * Strictly uses safe DOM methods (createElement / textContent); avoids raw HTML sinks.
  */
 
@@ -105,6 +105,65 @@ export function bandBadge(bandName) {
 }
 
 /**
+ * Format error message with icon-free text prefix ("Error: ") if not already prefixed.
+ * Pure function safe for both Node and browser runtimes.
+ * @param {string|null|undefined} message
+ * @returns {string}
+ */
+export function formatErrorMessage(message) {
+    const raw = String(message || "An unexpected error occurred.").trim();
+    if (raw.length === 0) {
+        return "Error: An unexpected error occurred.";
+    }
+    return raw.toLowerCase().startsWith("error:") ? raw : `Error: ${raw}`;
+}
+
+/**
+ * Render a reusable error-state DOM element with message and optional Retry button.
+ * Formats message with icon-free text prefix ("Error: ") if not already prefixed.
+ * @param {string} message - Error description text
+ * @param {Function} [onRetry] - Optional retry callback function
+ * @returns {HTMLElement}
+ */
+export function errorState(message, onRetry = null) {
+    const formatted = formatErrorMessage(message);
+    const errorSpan = el("span", { class: "error-text" }, formatted);
+    const children = [errorSpan];
+
+    if (typeof onRetry === "function") {
+        const retryBtn = el(
+            "button",
+            {
+                type: "button",
+                class: "btn btn-sm btn-retry",
+                onClick: (e) => {
+                    e.preventDefault();
+                    onRetry();
+                },
+            },
+            "Retry"
+        );
+        children.push(retryBtn);
+    }
+
+    return el("div", { class: "error-state", role: "alert" }, ...children);
+}
+
+/**
+ * Replace container children with the shared error-state element.
+ * @param {HTMLElement} container
+ * @param {string} message
+ * @param {Function} [onRetry]
+ */
+export function renderError(container, message, onRetry = null) {
+    if (!container) return;
+    while (container.firstChild) {
+        container.removeChild(container.firstChild);
+    }
+    container.appendChild(errorState(message, onRetry));
+}
+
+/**
  * Display a self-dismissing toast notification.
  */
 export function toast(message, kind = "info") {
@@ -124,4 +183,3 @@ export function toast(message, kind = "info") {
         }
     }, 5000);
 }
-

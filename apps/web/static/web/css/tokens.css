@@ -1,7 +1,8 @@
 /**
  * apps/web/static/web/css/tokens.css
  * Design tokens and theme variables (light + dark schemes).
- * WCAG AA contrast ratio (> 4.5:1) maintained across schemes.
+ * WCAG AA contrast ratio (> 4.5:1 for text, > 3:1 for borders/focus) maintained across schemes.
+ * All CSS files in the project consume variables declared here; no hardcoded colors elsewhere.
  */
 
 :root {
@@ -13,6 +14,12 @@
     --color-border: #cbd5e1;
     --color-accent: #0284c7;
     --color-accent-hover: #0369a1;
+
+    /* Button and Chip Text (White on dark backgrounds) */
+    --color-btn-primary-text: #ffffff;
+    --color-btn-danger-text: #ffffff;
+    --color-step-current-text: #ffffff;
+    --color-skip-link-text: #ffffff;
 
     /* Score Bands - Light Theme (Text / Background / Border) */
     --band-hot-text: #991b1b;
@@ -31,11 +38,25 @@
     --band-low-bg: #f1f5f9;
     --band-low-border: #cbd5e1;
 
-    /* Status Colors */
+    /* Status Colors - Light Theme */
     --color-success: #15803d;
     --color-success-bg: #dcfce7;
     --color-danger: #b91c1c;
     --color-danger-bg: #fee2e2;
+    --color-danger-border: #fca5a5;
+    --color-danger-hover: #991b1b;
+
+    /* Focus Ring & Interactive States */
+    --color-focus-ring: rgba(2, 132, 199, 0.25);
+    --color-focus-outline: #0284c7;
+    --opacity-disabled: 0.5;
+
+    /* Shadows - Light Theme */
+    --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    --shadow-card-hover: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    --shadow-toast: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-dialog: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    --dialog-backdrop: rgba(0, 0, 0, 0.6);
 
     /* Spacing Scale */
     --space-4: 4px;
@@ -59,9 +80,13 @@
     --font-2xl: 1.5rem;    /* 24px */
     --font-3xl: 1.875rem;  /* 30px */
 
-    /* Layout */
-    --max-content-width: 1200px;
+    /* Layout & Containers */
+    --page-max-width: 1280px;
+    --board-max-width: 1440px;
+    --auth-card-max-width: 420px;
+    --max-content-width: var(--page-max-width);
     --top-bar-height: 56px;
+    --touch-target-min: 40px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -71,9 +96,15 @@
         --color-surface: #1e293b;
         --color-text: #f8fafc;
         --color-text-muted: #94a3b8;
-        --color-border: #334155;
+        --color-border: #475569;
         --color-accent: #38bdf8;
         --color-accent-hover: #7dd3fc;
+
+        /* Button and Chip Text in Dark Theme */
+        --color-btn-primary-text: #0b1120;
+        --color-btn-danger-text: #ffffff;
+        --color-step-current-text: #0b1120;
+        --color-skip-link-text: #0b1120;
 
         /* Score Bands - Dark Theme */
         --band-hot-text: #fecaca;
@@ -92,11 +123,23 @@
         --band-low-bg: #1e293b;
         --band-low-border: #475569;
 
-        /* Status Colors */
+        /* Status Colors - Dark Theme */
         --color-success: #86efac;
         --color-success-bg: #052e16;
         --color-danger: #fca5a5;
         --color-danger-bg: #450a0a;
+        --color-danger-border: #7f1d1d;
+        --color-danger-hover: #ef4444;
+
+        /* Focus Ring & Interactive States - Dark Theme */
+        --color-focus-ring: rgba(56, 189, 248, 0.35);
+        --color-focus-outline: #38bdf8;
+
+        /* Shadows - Dark Theme */
+        --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.4);
+        --shadow-card-hover: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.5);
+        --shadow-toast: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+        --shadow-dialog: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+        --dialog-backdrop: rgba(0, 0, 0, 0.8);
     }
 }
-

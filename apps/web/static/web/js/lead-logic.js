@@ -178,3 +178,27 @@ export function historyLabel(change, stageLabelFor = null) {
     const fromLabel = getLabel(change.from_stage, change.from_stage_label);
     return `${fromLabel} to ${toLabel}`;
 }
+
+/**
+ * Determine if the stage update button should be enabled.
+ * Disabled when:
+ * 1. busy is true (request in flight)
+ * 2. selectedStage equals shownStage (even if note is present; notes without stage change use "Add note")
+ * 3. selectedStage is invalid or empty
+ *
+ * @param {string} shownStage - Currently active stage for the lead
+ * @param {string} selectedStage - Currently selected stage in the dropdown
+ * @param {string|null} [note] - Optional note text
+ * @param {boolean} [busy=false] - Whether a network request is currently pending
+ * @returns {boolean}
+ */
+export function canSubmitStage(shownStage, selectedStage, note = "", busy = false) {
+    if (busy) {
+        return false;
+    }
+    if (!selectedStage || typeof selectedStage !== "string") {
+        return false;
+    }
+    return selectedStage !== shownStage;
+}
+

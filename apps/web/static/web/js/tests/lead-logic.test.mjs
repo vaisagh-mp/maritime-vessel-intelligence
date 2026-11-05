@@ -15,7 +15,9 @@ import {
     buildPatchBody,
     actorName,
     historyLabel,
+    canSubmitStage,
 } from "../lead-logic.js";
+import { formatErrorMessage } from "../ui.js";
 import { PIPELINE_ORDER, STAGES } from "../stages.js";
 
 test("stageOptions: returns all stages with correct isCurrent flag", () => {
@@ -225,3 +227,54 @@ test("historyLabel: handles standard transitions and creation entries", () => {
         "Contacted to Replied"
     );
 });
+
+test("canSubmitStage: validates stage change and busy state", () => {
+    // Unchanged stage without note is disabled
+    assert.equal(canSubmitStage("detected", "detected", "", false), false);
+
+    // Unchanged stage even with note is disabled (must use Add note form instead)
+    assert.equal(canSubmitStage("detected", "detected", "My transition note", false), false);
+
+    // Changed stage without note is enabled
+    assert.equal(canSubmitStage("detected", "qualifying", "", false), true);
+
+    // Changed stage with note is enabled
+    assert.equal(canSubmitStage("detected", "qualifying", "My note", false), true);
+
+    // Changed stage while busy is disabled
+    assert.equal(canSubmitStage("detected", "qualifying", "My note", true), false);
+    assert.equal(canSubmitStage("detected", "qualifying", "", true), false);
+
+    // Invalid or missing selected stage is disabled
+    assert.equal(canSubmitStage("detected", "", "", false), false);
+    assert.equal(canSubmitStage("detected", null, "", false), false);
+    assert.equal(canSubmitStage("detected", undefined, "", false), false);
+});
+
+test("formatErrorMessage: ensures clean icon-free Error: prefix without duplication", () => {
+    assert.equal(
+        formatErrorMessage("Failed to load records."),
+        "Error: Failed to load records."
+    );
+    assert.equal(
+        formatErrorMessage("Error: Server responded with 500"),
+        "Error: Server responded with 500"
+    );
+    assert.equal(
+        formatErrorMessage("error: already prefixed lowercase"),
+        "error: already prefixed lowercase"
+    );
+    assert.equal(
+        formatErrorMessage(""),
+        "Error: An unexpected error occurred."
+    );
+    assert.equal(
+        formatErrorMessage(null),
+        "Error: An unexpected error occurred."
+    );
+    assert.equal(
+        formatErrorMessage(undefined),
+        "Error: An unexpected error occurred."
+    );
+});
+

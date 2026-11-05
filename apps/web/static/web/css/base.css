@@ -1,6 +1,7 @@
 /**
  * apps/web/static/web/css/base.css
- * Core reset, typography, base layout, and accessibility utilities.
+ * Core reset, typography, base layout, top-bar, and accessibility utilities.
+ * Uses design tokens only from tokens.css.
  */
 
 *, *::before, *::after {
@@ -27,7 +28,7 @@ body {
 
 /* Accessibility: focus ring */
 :focus-visible {
-    outline: 2px solid var(--color-accent);
+    outline: 2px solid var(--color-focus-outline);
     outline-offset: 2px;
 }
 
@@ -37,7 +38,7 @@ body {
     top: -999px;
     left: var(--space-16);
     background: var(--color-accent);
-    color: #ffffff;
+    color: var(--color-skip-link-text);
     padding: var(--space-8) var(--space-16);
     border-radius: var(--radius-sm);
     text-decoration: none;
@@ -94,7 +95,7 @@ p {
 
 /* Top bar navigation */
 .top-bar {
-    height: var(--top-bar-height);
+    min-height: var(--top-bar-height);
     background-color: var(--color-surface);
     border-bottom: 1px solid var(--color-border);
     display: flex;
@@ -104,6 +105,15 @@ p {
     position: sticky;
     top: 0;
     z-index: 100;
+    gap: var(--space-16);
+    flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+    .top-bar {
+        padding: var(--space-8) var(--space-16);
+        gap: var(--space-8);
+    }
 }
 
 .top-bar-brand {
@@ -120,18 +130,23 @@ p {
 
 .top-bar-nav {
     display: flex;
-    gap: var(--space-16);
+    gap: var(--space-12);
     align-items: center;
+    flex-wrap: wrap;
 }
 
 .nav-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-target-min);
     font-size: var(--font-sm);
     font-weight: 500;
     color: var(--color-text-muted);
     padding: var(--space-8) var(--space-12);
     border-radius: var(--radius-sm);
     text-decoration: none;
-    transition: color 0.15s ease, background-color 0.15s ease;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .nav-link:hover {
@@ -145,12 +160,14 @@ p {
     color: var(--color-accent);
     background-color: var(--color-bg);
     font-weight: 600;
+    border-bottom-color: var(--color-accent);
 }
 
 .top-bar-user {
     display: flex;
     align-items: center;
-    gap: var(--space-16);
+    gap: var(--space-12);
+    flex-wrap: wrap;
 }
 
 .user-name {
@@ -159,18 +176,25 @@ p {
     font-weight: 500;
 }
 
+/* Role Badge: Quiet, non-interactive pill */
+.user-role-pill,
 .user-role {
+    display: inline-flex;
+    align-items: center;
     font-size: var(--font-xs);
-    font-weight: 600;
-    color: var(--color-accent);
+    font-weight: 500;
+    color: var(--color-text-muted);
     background-color: var(--color-bg);
-    padding: var(--space-4) var(--space-8);
+    padding: 2px var(--space-8);
     border-radius: var(--radius-sm);
     border: 1px solid var(--color-border);
+    user-select: none;
+    pointer-events: none;
 }
 
 .logout-form {
-    display: inline;
+    display: inline-flex;
+    align-items: center;
     margin: 0;
 }
 
@@ -178,15 +202,23 @@ p {
 .main-content {
     flex: 1;
     width: 100%;
-    max-width: var(--max-content-width);
+    max-width: var(--page-max-width);
     margin: 0 auto;
     padding: var(--space-24);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-24);
+}
+
+.main-content.board-main {
+    max-width: var(--board-max-width);
 }
 
 .page-container {
     display: flex;
     flex-direction: column;
     gap: var(--space-24);
+    width: 100%;
 }
 
 .page-header {
@@ -195,3 +227,26 @@ p {
     gap: var(--space-4);
 }
 
+/* Print Styles */
+@media print {
+    .top-bar,
+    .skip-link,
+    .toast-region,
+    .btn,
+    .filter-bar,
+    .pagination-container,
+    .back-link,
+    dialog {
+        display: none;
+    }
+
+    body {
+        background-color: var(--color-surface);
+        color: var(--color-text);
+    }
+
+    .main-content {
+        max-width: 100%;
+        padding: 0;
+    }
+}
