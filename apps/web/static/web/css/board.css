@@ -81,7 +81,7 @@
 .filter-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-12);
+    gap: var(--space-8);
     align-items: center;
     margin-left: auto;
 }
@@ -152,7 +152,7 @@
 .board-columns {
     display: grid;
     grid-template-columns: 1fr;
-    gap: var(--space-16);
+    gap: var(--section-gap);
     width: 100%;
 }
 
