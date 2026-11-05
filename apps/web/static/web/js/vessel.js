@@ -54,7 +54,7 @@ function setLoading(container, message) {
     while (container.firstChild) {
         container.removeChild(container.firstChild);
     }
-    container.appendChild(el("div", { class: "loading-state" }, message));
+    container.appendChild(el("div", { class: "loading-state", role: "status" }, message));
 }
 
 
@@ -66,7 +66,7 @@ function setEmpty(container, message) {
     while (container.firstChild) {
         container.removeChild(container.firstChild);
     }
-    container.appendChild(el("div", { class: "empty-state" }, message));
+    container.appendChild(el("div", { class: "empty-state", role: "status" }, message));
 }
 
 /**
@@ -345,6 +345,9 @@ async function loadMoreObservations(tbody, loadMoreContainer) {
         while (loadMoreContainer.firstChild) {
             loadMoreContainer.removeChild(loadMoreContainer.firstChild);
         }
+
+        const announcement = el("span", { class: "visually-hidden", role: "status", "aria-live": "polite" }, `${moreObs.length} more observations loaded`);
+        loadMoreContainer.appendChild(announcement);
 
         if (observationsNextUrl) {
             const btn = el(

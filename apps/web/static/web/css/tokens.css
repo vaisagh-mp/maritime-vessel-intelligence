@@ -11,8 +11,8 @@
     --color-surface: #ffffff;
     --color-text: #0f172a;
     --color-text-muted: #475569;
-    --color-border: #cbd5e1;
-    --color-accent: #0284c7;
+    --color-border: #8090a4;
+    --color-accent: #0274b3;
     --color-accent-hover: #0369a1;
 
     /* Button and Chip Text (White on dark backgrounds) */
@@ -47,8 +47,8 @@
     --color-danger-hover: #991b1b;
 
     /* Focus Ring & Interactive States */
-    --color-focus-ring: rgba(2, 132, 199, 0.25);
-    --color-focus-outline: #0284c7;
+    --color-focus-ring: rgba(2, 116, 179, 0.25);
+    --color-focus-outline: #0274b3;
     --opacity-disabled: 0.5;
 
     /* Shadows - Light Theme */
@@ -97,7 +97,7 @@
         --color-surface: #1e293b;
         --color-text: #f8fafc;
         --color-text-muted: #94a3b8;
-        --color-border: #475569;
+        --color-border: #64748b;
         --color-accent: #38bdf8;
         --color-accent-hover: #7dd3fc;
 

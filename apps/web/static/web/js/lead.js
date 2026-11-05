@@ -190,7 +190,8 @@ function renderProgressStrip(currentStage) {
         if (isCurrent) {
             attrs["aria-current"] = "step";
         }
-        stepList.appendChild(el("li", attrs, step.label));
+        const stepText = isCurrent ? `${step.label} (current step)` : step.label;
+        stepList.appendChild(el("li", attrs, stepText));
     }
     container.appendChild(stepList);
 
@@ -208,7 +209,8 @@ function renderProgressStrip(currentStage) {
         if (isCurrent) {
             attrs["aria-current"] = "step";
         }
-        sideStrip.appendChild(el("span", attrs, side.label));
+        const sideText = isCurrent ? `${side.label} (current step)` : side.label;
+        sideStrip.appendChild(el("span", attrs, sideText));
     }
     container.appendChild(sideStrip);
 }
@@ -289,17 +291,25 @@ function initStageForm() {
         updateStageButtonState();
     });
 
+    let lastActiveElement = null;
+
     // Confirmation dialog cancel / close
     if (dialogCancelBtn && dialog) {
         dialogCancelBtn.addEventListener("click", () => {
             dialog.close();
             pendingTransition = null;
+            if (lastActiveElement && typeof lastActiveElement.focus === "function") {
+                lastActiveElement.focus();
+            }
         });
     }
 
     if (dialog) {
         dialog.addEventListener("cancel", () => {
             pendingTransition = null;
+            if (lastActiveElement && typeof lastActiveElement.focus === "function") {
+                lastActiveElement.focus();
+            }
         });
     }
 
@@ -307,6 +317,9 @@ function initStageForm() {
     if (dialogConfirmBtn && dialog) {
         dialogConfirmBtn.addEventListener("click", async () => {
             dialog.close();
+            if (lastActiveElement && typeof lastActiveElement.focus === "function") {
+                lastActiveElement.focus();
+            }
             if (pendingTransition) {
                 const { newStage, noteText } = pendingTransition;
                 pendingTransition = null;
@@ -328,11 +341,15 @@ function initStageForm() {
         if (needsConfirm(selectedStage)) {
             pendingTransition = { newStage: selectedStage, noteText };
             if (dialog && dialogMessage) {
+                lastActiveElement = document.activeElement;
                 const stageObj = STAGES.find((s) => s.value === selectedStage);
                 const targetLabel = stageObj ? stageObj.label : selectedStage;
                 const vesselName = currentOpportunity.vessel_summary?.name || "this vessel";
                 dialogMessage.textContent = `Move lead for ${vesselName} to "${targetLabel}"?`;
                 dialog.showModal();
+                if (dialogCancelBtn) {
+                    dialogCancelBtn.focus();
+                }
             }
         } else {
             await executeStagePatch(selectedStage, noteText);
@@ -444,7 +461,7 @@ async function loadNotes(id, reset = false) {
         if (paginationContainer) {
             while (paginationContainer.firstChild) paginationContainer.removeChild(paginationContainer.firstChild);
         }
-        listContainer.appendChild(el("div", { class: "loading-state" }, "Loading notes..."));
+        listContainer.appendChild(el("div", { class: "loading-state", role: "status" }, "Loading notes..."));
     }
 
     const url = notesNextUrl || `/api/v1/opportunities/${id}/notes/?page_size=25`;
@@ -460,7 +477,7 @@ async function loadNotes(id, reset = false) {
         const notes = data.results || (Array.isArray(data) ? data : []);
 
         if (notes.length === 0 && listContainer.children.length === 0) {
-            listContainer.appendChild(el("div", { class: "empty-state" }, "No notes yet."));
+            listContainer.appendChild(el("div", { class: "empty-state", role: "status" }, "No notes yet."));
         } else {
             for (const note of notes) {
                 listContainer.appendChild(renderNoteItem(note));
@@ -470,6 +487,11 @@ async function loadNotes(id, reset = false) {
         // Pagination button
         if (paginationContainer) {
             while (paginationContainer.firstChild) paginationContainer.removeChild(paginationContainer.firstChild);
+            if (!reset && notes.length > 0) {
+                paginationContainer.appendChild(
+                    el("span", { class: "visually-hidden", role: "status", "aria-live": "polite" }, `${notes.length} more notes loaded`)
+                );
+            }
             if (notesNextUrl) {
                 const loadMoreBtn = el(
                     "button",
@@ -585,7 +607,7 @@ async function loadHistory(id, reset = false) {
         if (paginationContainer) {
             while (paginationContainer.firstChild) paginationContainer.removeChild(paginationContainer.firstChild);
         }
-        listContainer.appendChild(el("div", { class: "loading-state" }, "Loading stage history..."));
+        listContainer.appendChild(el("div", { class: "loading-state", role: "status" }, "Loading stage history..."));
     }
 
     const url = historyNextUrl || `/api/v1/opportunities/${id}/history/?page_size=25`;
@@ -604,7 +626,7 @@ async function loadHistory(id, reset = false) {
             listContainer.appendChild(
                 el(
                     "div",
-                    { class: "empty-state" },
+                    { class: "empty-state", role: "status" },
                     "No stage changes recorded yet. Changes made from now on appear here."
                 )
             );
@@ -617,6 +639,11 @@ async function loadHistory(id, reset = false) {
         // Pagination button
         if (paginationContainer) {
             while (paginationContainer.firstChild) paginationContainer.removeChild(paginationContainer.firstChild);
+            if (!reset && items.length > 0) {
+                paginationContainer.appendChild(
+                    el("span", { class: "visually-hidden", role: "status", "aria-live": "polite" }, `${items.length} more stage changes loaded`)
+                );
+            }
             if (historyNextUrl) {
                 const loadMoreBtn = el(
                     "button",
@@ -647,7 +674,7 @@ function renderVesselSummary(summary, vesselId) {
     }
 
     if (!summary) {
-        container.appendChild(el("div", { class: "empty-state" }, "No vessel details available."));
+        container.appendChild(el("div", { class: "empty-state", role: "status" }, "No vessel details available."));
         return;
     }
 
