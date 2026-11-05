@@ -98,3 +98,15 @@ Opportunity PATCH-only stage editing.
   the pipeline.
 - **Every enrichment call is logged** (success or failure) to `EnrichmentLog`
   for auditable credit spend.
+
+## Web app
+
+The project includes a server-rendered web application with vanilla JavaScript (`apps/web/`) for the Business Development team:
+- **Lead board**: Three arrival columns (24h priority, 72h approach, Anchorage/port), live filtering, quick filter reset, and CSV export.
+- **Vessel dossier**: Technical particulars, voyage status, position history, and corporate relationships.
+- **Opportunity pipeline**: Stage transition workflows with confirmation safeguards, rich note taking, and stage change history.
+
+Documentation:
+- **User Guide**: See [docs/USER_GUIDE.md](docs/USER_GUIDE.md) for BD team onboarding, score band meanings, lead board usage, and operational cautions.
+- **Deployment Notes**: See [docs/DEPLOYMENT_NOTES.md](docs/DEPLOYMENT_NOTES.md) for production environment variables, hashed static files collection, and pre-release verification.
+
