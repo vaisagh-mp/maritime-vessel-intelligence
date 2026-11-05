@@ -44,6 +44,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "apps.web.middleware.ContentSecurityPolicyMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -103,6 +104,40 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Production hashed static files switch
+STATIC_HASHING = os.getenv("STATIC_HASHING", "False").lower() in ("true", "1", "yes")
+
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": (
+            "apps.web.storage.AggregatedManifestStaticFilesStorage"
+            if STATIC_HASHING
+            else "django.contrib.staticfiles.storage.StaticFilesStorage"
+        ),
+    },
+}
+
+# --- Security settings (environment-driven with safe development defaults) ---
+SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "False").lower() in ("true", "1", "yes")
+CSRF_COOKIE_SECURE = os.getenv("CSRF_COOKIE_SECURE", "False").lower() in ("true", "1", "yes")
+SECURE_SSL_REDIRECT = os.getenv("SECURE_SSL_REDIRECT", "False").lower() in ("true", "1", "yes")
+_hsts_sec = os.getenv("SECURE_HSTS_SECONDS")
+SECURE_HSTS_SECONDS = int(_hsts_sec) if _hsts_sec else 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = os.getenv("SECURE_HSTS_INCLUDE_SUBDOMAINS", "False").lower() in ("true", "1", "yes")
+
+# Unconditional security settings & headers
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = "same-origin"
+X_FRAME_OPTIONS = "DENY"
+
+WEB_CSP_MODE = os.getenv("WEB_CSP_MODE", "enforce")
 
 LOGIN_URL = "/login/"
 LOGIN_REDIRECT_URL = "/"
