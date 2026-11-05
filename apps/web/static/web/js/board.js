@@ -18,7 +18,7 @@ import {
     VALID_STAGES,
     ZONES,
 } from "./board-logic.js";
-import { bandBadge, el, errorState, formatNumber, formatUtc } from "./ui.js";
+import { bandBadge, el, errorState, formatNumber, formatUtc, onReady, registerGlobalErrorHandlers, renderPageCrash } from "./ui.js";
 
 const EM_DASH = "\u2014";
 
@@ -412,16 +412,22 @@ function bindFilterEvents() {
     }
 }
 
-// Initialise board
-document.addEventListener("DOMContentLoaded", async () => {
+// Initialise board safely when DOM is ready
+onReady(async () => {
+    registerGlobalErrorHandlers();
     try {
-        const initQuery = window.location.search;
-        sessionStorage.setItem("board_query", initQuery ? initQuery.substring(1) : "");
-    } catch {
-        // Ignore storage access errors
+        try {
+            const initQuery = window.location.search;
+            sessionStorage.setItem("board_query", initQuery ? initQuery.substring(1) : "");
+        } catch {
+            // Ignore storage access errors
+        }
+        syncFormControls();
+        bindFilterEvents();
+        await populatePortsDropdown();
+        refreshAllColumns();
+    } catch (err) {
+        const main = document.getElementById("main") || document.body;
+        renderPageCrash(main, "Board controller initialization failed", err);
     }
-    syncFormControls();
-    bindFilterEvents();
-    await populatePortsDropdown();
-    refreshAllColumns();
 });

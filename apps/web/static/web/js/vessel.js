@@ -6,7 +6,7 @@
  */
 
 import { api, ApiError } from "./api.js";
-import { el, renderError } from "./ui.js";
+import { el, renderError, onReady, registerGlobalErrorHandlers, renderPageCrash } from "./ui.js";
 import {
     navStatusLabel,
     portAreaLabel,
@@ -258,7 +258,7 @@ function formatNextPort(destination, unlocode) {
 }
 
 function renderPositionHistoryCard(container, initialObservations, vesselId) {
-    const tableWrap = el("div", { class: "vessel-table-wrap", tabindex: "0", role: "region", "aria-label": "Position observations history" });
+    const tableWrap = el("div", { class: "table-scroll vessel-table-wrap", tabindex: "0", role: "region", "aria-label": "Position observations history" });
     const table = el("table", { class: "vessel-table" });
 
     table.appendChild(
@@ -451,7 +451,7 @@ function updateHeaderBadge(newestOpenOpp) {
 }
 
 function renderOpportunitiesTable(container, opps) {
-    const tableWrap = el("div", { class: "vessel-table-wrap", tabindex: "0", role: "region", "aria-label": "Vessel opportunities table" });
+    const tableWrap = el("div", { class: "table-scroll vessel-table-wrap", tabindex: "0", role: "region", "aria-label": "Vessel opportunities table" });
     const table = el("table", { class: "vessel-table" });
 
     table.appendChild(
@@ -495,7 +495,11 @@ function renderOpportunitiesTable(container, opps) {
             ),
             el("td", {}, formatEtaAndSource(opp.eta, opp.eta_source)),
             el("td", {}, formatDateTimeUtc(opp.detected_at)),
-            el("td", {}, opp.lead_reason || "\u2014"),
+            el(
+                "td",
+                { class: "cell-lead-reason" },
+                el("span", { class: "lead-reason-clamp", title: opp.lead_reason || "\u2014" }, opp.lead_reason || "\u2014")
+            ),
             el(
                 "td",
                 {},
@@ -655,20 +659,26 @@ function renderContactEntry(rel) {
 }
 
 /**
- * Initialize vessel detail page on DOMContentLoaded.
+ * Initialize vessel detail page safely when DOM is ready.
  */
-document.addEventListener("DOMContentLoaded", () => {
-    initBackLink();
+onReady(() => {
+    registerGlobalErrorHandlers();
+    try {
+        initBackLink();
 
-    const rootElement = document.querySelector("[data-vessel-id]");
-    if (!rootElement) return;
+        const rootElement = document.querySelector("[data-vessel-id]");
+        if (!rootElement) return;
 
-    const vesselId = rootElement.dataset.vesselId;
-    if (!vesselId) return;
+        const vesselId = rootElement.dataset.vesselId;
+        if (!vesselId) return;
 
-    // Trigger all four requests in parallel; each updates its own card upon response
-    loadVesselData(vesselId);
-    loadObservationsData(vesselId);
-    loadOpportunitiesData(vesselId);
-    loadRelationshipsData(vesselId);
+        // Trigger all four requests in parallel; each updates its own card upon response
+        loadVesselData(vesselId);
+        loadObservationsData(vesselId);
+        loadOpportunitiesData(vesselId);
+        loadRelationshipsData(vesselId);
+    } catch (err) {
+        const main = document.getElementById("main") || document.body;
+        renderPageCrash(main, "Vessel controller initialization failed", err);
+    }
 });

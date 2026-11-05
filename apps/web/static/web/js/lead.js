@@ -7,7 +7,18 @@
  */
 
 import { api, ApiError } from "./api.js";
-import { el, formatUtc, formatNumber, dash, bandBadge, toast, renderError } from "./ui.js";
+import {
+    el,
+    formatUtc,
+    formatNumber,
+    dash,
+    bandBadge,
+    toast,
+    renderError,
+    onReady,
+    registerGlobalErrorHandlers,
+    renderPageCrash,
+} from "./ui.js";
 import { etaRelative, etaSourceLabel } from "./board-logic.js";
 import {
     stageOptions,
@@ -89,7 +100,7 @@ function renderHeader(opp) {
         portEl.textContent = `${pName}${pLoc}`;
     }
 
-    // Header Badges
+    // Header Badges - only render chips that have valid values
     const badgeContainer = document.getElementById("header-badges");
     if (badgeContainer) {
         while (badgeContainer.firstChild) {
@@ -97,22 +108,27 @@ function renderHeader(opp) {
         }
 
         // Score Band Badge
-        badgeContainer.appendChild(bandBadge(opp.band));
+        if (opp.band) {
+            badgeContainer.appendChild(bandBadge(opp.band));
+        }
 
         // Numeric Score Badge
-        const scoreBadge = el(
-            "span",
-            { class: "badge badge-score", title: "Lead Score" },
-            `${opp.score} pts`
-        );
-        badgeContainer.appendChild(scoreBadge);
+        if (opp.score !== null && opp.score !== undefined) {
+            const scoreBadge = el(
+                "span",
+                { class: "badge badge-score", title: "Lead Score" },
+                `${opp.score} pts`
+            );
+            badgeContainer.appendChild(scoreBadge);
+        }
 
         // Zone Badge
-        if (opp.zone_label || opp.zone) {
+        const zoneVal = opp.zone_label || opp.zone;
+        if (zoneVal) {
             const zoneBadge = el(
                 "span",
                 { class: "badge badge-zone", title: "Arrival Zone" },
-                opp.zone_label || opp.zone
+                zoneVal
             );
             badgeContainer.appendChild(zoneBadge);
         }
@@ -128,24 +144,26 @@ function renderHeader(opp) {
         }
     }
 
-    // ETA row
-    const etaRowText = document.getElementById("header-eta-text");
-    if (etaRowText) {
+    // Meta definition list (ETA, Source, Reason)
+    const metaEta = document.getElementById("header-meta-eta");
+    if (metaEta) {
         if (!opp.eta) {
-            etaRowText.textContent = "ETA: None recorded";
+            metaEta.textContent = "None recorded";
         } else {
             const utcStr = formatUtc(opp.eta);
             const relStr = etaRelative(opp.eta);
-            const srcStr = etaSourceLabel(opp.eta_source);
-            const srcSuffix = srcStr ? ` · ${srcStr}` : "";
-            etaRowText.textContent = `ETA: ${utcStr} (${relStr})${srcSuffix}`;
+            metaEta.textContent = `${utcStr} (${relStr})`;
         }
     }
 
-    // Lead Reason
-    const reasonEl = document.getElementById("header-lead-reason");
-    if (reasonEl) {
-        reasonEl.textContent = opp.lead_reason || "No lead rationale recorded.";
+    const metaSource = document.getElementById("header-meta-source");
+    if (metaSource) {
+        metaSource.textContent = etaSourceLabel(opp.eta_source) || opp.eta_source || "—";
+    }
+
+    const metaReason = document.getElementById("header-meta-reason");
+    if (metaReason) {
+        metaReason.textContent = opp.lead_reason || "No lead rationale recorded.";
     }
 }
 
@@ -660,39 +678,45 @@ function renderVesselSummary(summary, vesselId) {
 }
 
 /**
- * Main Page Initialization.
+ * Main Page Initialization when DOM is ready.
  */
-document.addEventListener("DOMContentLoaded", async () => {
-    const mainEl = document.querySelector("[data-lead-id]");
-    if (!mainEl) return;
-
-    leadId = mainEl.dataset.leadId;
-    if (!leadId) return;
-
-    initBackLink();
-    initStageForm();
-    initNoteForm();
-
-    // 1. Fetch opportunity details
+onReady(async () => {
+    registerGlobalErrorHandlers();
     try {
-        const oppRes = await api.get(`/api/v1/opportunities/${leadId}/`);
-        currentOpportunity = oppRes;
+        const mainEl = document.querySelector("[data-lead-id]");
+        if (!mainEl) return;
 
-        // Render Card 1 (Header), Card 2 (Stage), and Card 5 (Vessel Summary)
-        renderHeader(oppRes);
-        renderProgressStrip(oppRes.stage);
-        populateStageSelect(oppRes.stage);
-        renderVesselSummary(oppRes.vessel_summary, oppRes.vessel);
-        updateStageButtonState();
-    } catch (err) {
-        const header = document.getElementById("page-header");
-        if (header) {
-            renderError(header, err.message || "Failed to load lead.", () => window.location.reload());
+        leadId = mainEl.dataset.leadId;
+        if (!leadId) return;
+
+        initBackLink();
+        initStageForm();
+        initNoteForm();
+
+        // 1. Fetch opportunity details
+        try {
+            const oppRes = await api.get(`/api/v1/opportunities/${leadId}/`);
+            currentOpportunity = oppRes;
+
+            // Render Card 1 (Header), Card 2 (Stage), and Card 5 (Vessel Summary)
+            renderHeader(oppRes);
+            renderProgressStrip(oppRes.stage);
+            populateStageSelect(oppRes.stage);
+            renderVesselSummary(oppRes.vessel_summary, oppRes.vessel);
+            updateStageButtonState();
+        } catch (err) {
+            const header = document.getElementById("page-header");
+            if (header) {
+                renderError(header, err.message || "Failed to load lead.", () => window.location.reload());
+            }
         }
-    }
 
-    // 2. Fetch notes and history in parallel (failures do not block header or pipeline)
-    loadNotes(leadId, true).catch(() => {});
-    loadHistory(leadId, true).catch(() => {});
+        // 2. Fetch notes and history in parallel (failures do not block header or pipeline)
+        loadNotes(leadId, true).catch(() => {});
+        loadHistory(leadId, true).catch(() => {});
+    } catch (err) {
+        const main = document.getElementById("main") || document.body;
+        renderPageCrash(main, "Lead controller initialization failed", err);
+    }
 });
 

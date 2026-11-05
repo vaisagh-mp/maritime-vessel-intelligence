@@ -29,8 +29,8 @@
 
 <div class="vessel-grid">
     <!-- Card 2: Particulars -->
-    <section class="card vessel-card" id="card-particulars" aria-labelledby="heading-particulars">
-        <div class="card-header-row">
+    <section class="card" id="card-particulars" aria-labelledby="heading-particulars">
+        <div class="card-header">
             <h2 id="heading-particulars" class="card-title">Particulars</h2>
         </div>
         <div class="card-body" id="body-particulars">
@@ -39,8 +39,8 @@
     </section>
 
     <!-- Card 3: Latest position and voyage -->
-    <section class="card vessel-card" id="card-position" aria-labelledby="heading-position">
-        <div class="card-header-row">
+    <section class="card" id="card-position" aria-labelledby="heading-position">
+        <div class="card-header">
             <h2 id="heading-position" class="card-title">Latest Position &amp; Voyage</h2>
         </div>
         <div class="card-body" id="body-position">
@@ -49,8 +49,8 @@
     </section>
 
     <!-- Card 4: Opportunities -->
-    <section class="card vessel-card card-full-width" id="card-opportunities" aria-labelledby="heading-opportunities">
-        <div class="card-header-row">
+    <section class="card card-full-width" id="card-opportunities" aria-labelledby="heading-opportunities">
+        <div class="card-header">
             <h2 id="heading-opportunities" class="card-title">Opportunities</h2>
         </div>
         <div class="card-body" id="body-opportunities">
@@ -59,8 +59,8 @@
     </section>
 
     <!-- Card 5: Owners and managers -->
-    <section class="card vessel-card card-full-width" id="card-relationships" aria-labelledby="heading-relationships">
-        <div class="card-header-row">
+    <section class="card card-full-width" id="card-relationships" aria-labelledby="heading-relationships">
+        <div class="card-header">
             <h2 id="heading-relationships" class="card-title">Owners &amp; Managers</h2>
         </div>
         <div class="card-body" id="body-relationships">
@@ -69,8 +69,8 @@
     </section>
 
     <!-- Card 6: Position history -->
-    <section class="card vessel-card card-full-width" id="card-history" aria-labelledby="heading-history">
-        <div class="card-header-row">
+    <section class="card card-full-width" id="card-history" aria-labelledby="heading-history">
+        <div class="card-header">
             <h2 id="heading-history" class="card-title">Position History</h2>
         </div>
         <div class="card-body" id="body-history">
@@ -81,6 +81,6 @@
 {% endblock content %}
 
 {% block scripts %}
-<script type="module" src="{% static 'web/js/vessel-logic.js' %}"></script>
-<script type="module" src="{% static 'web/js/vessel.js' %}"></script>
+<script type="module" src="{% static 'web/js/vessel-logic.js' %}?v={{ static_version }}"></script>
+<script type="module" src="{% static 'web/js/vessel.js' %}?v={{ static_version }}"></script>
 {% endblock scripts %}

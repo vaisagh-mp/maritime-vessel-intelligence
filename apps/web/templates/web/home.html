@@ -138,6 +138,6 @@
 {% endblock content %}
 
 {% block scripts %}
-<script type="module" src="{% static 'web/js/board-logic.js' %}"></script>
-<script type="module" src="{% static 'web/js/board.js' %}"></script>
+<script type="module" src="{% static 'web/js/board-logic.js' %}?v={{ static_version }}"></script>
+<script type="module" src="{% static 'web/js/board.js' %}?v={{ static_version }}"></script>
 {% endblock scripts %}
