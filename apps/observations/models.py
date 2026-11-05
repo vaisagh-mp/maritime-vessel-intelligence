@@ -33,6 +33,28 @@ class VesselObservation(models.Model):
         db_table = "vi_vessel_observation"
         ordering = ["-timestamp"]
 
+    def __init__(self, *args, **kwargs):
+        came_from = kwargs.pop("came_from_target_port", None)
+        super().__init__(*args, **kwargs)
+        if came_from is not None:
+            self._came_from_target_port = bool(came_from)
+
+    @property
+    def came_from_target_port(self) -> bool:
+        if hasattr(self, "_came_from_target_port"):
+            return self._came_from_target_port
+        target_unlocodes = {"AEFJR", "SGSIN"}
+        if self.last_port_unlocode and self.last_port_unlocode.upper() in target_unlocodes:
+            return True
+        lp = (self.last_port or "").upper()
+        if "FUJAIRAH" in lp or "SINGAPORE" in lp:
+            return True
+        return False
+
+    @came_from_target_port.setter
+    def came_from_target_port(self, value):
+        self._came_from_target_port = bool(value)
+
     def __str__(self):
         return f"{self.vessel} @ {self.timestamp:%Y-%m-%d %H:%M}"
 

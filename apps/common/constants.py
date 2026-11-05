@@ -27,6 +27,7 @@ RELATIONSHIP_ROLE_MANAGER = "manager"
 RELATIONSHIP_ROLE_OPERATOR = "operator"
 RELATIONSHIP_ROLE_TECHNICAL_MANAGER = "technical_manager"
 RELATIONSHIP_ROLE_ISM_MANAGER = "ism_manager"
+RELATIONSHIP_ROLE_COMMERCIAL_MANAGER = "commercial_manager"
 RELATIONSHIP_ROLE_BENEFICIAL_OWNER = "beneficial_owner"
 
 RELATIONSHIP_ROLE_CHOICES = [
@@ -66,11 +67,13 @@ SOURCE_KPLER_VESSELS = "kpler:vessels"
 ZONE_72H = "72h"
 ZONE_24H = "24h"
 ZONE_ANCHORAGE = "anchorage"
+ZONE_ANCHORAGE_BOUND = "anchorage_bound"
 
 ZONE_CHOICES = [
     (ZONE_72H, "72 Hour Approach"),
     (ZONE_24H, "24 Hour Priority"),
     (ZONE_ANCHORAGE, "Anchorage / Port"),
+    (ZONE_ANCHORAGE_BOUND, "Anchorage bound"),
 ]
 
 STAGE_DETECTED = "detected"

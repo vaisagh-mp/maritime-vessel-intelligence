@@ -4,9 +4,15 @@ from datetime import timedelta
 
 from django.utils import timezone
 
-from apps.common.constants import ZONE_24H, ZONE_72H, ZONE_ANCHORAGE
+from apps.common.constants import (
+    PORT_AREA_ANCHORAGE_BOUND,
+    ZONE_24H,
+    ZONE_72H,
+    ZONE_ANCHORAGE,
+    ZONE_ANCHORAGE_BOUND,
+)
 from apps.opportunities.models import Opportunity
-from services.scoring_service import calculate_score
+from services.scoring_service import calculate_score, calculate_score_and_reason
 
 
 def classify_zone_by_eta(eta, now=None) -> str:
@@ -34,10 +40,12 @@ def classify_zone_by_proximity() -> str:
 
 
 def recalculate_score(opportunity):
-    """Compute the current score via the scoring engine and persist it.
+    """Compute the current score and lead_reason via the scoring engine and persist them.
     Called from all trigger points — never duplicates the save logic."""
-    opportunity.score = calculate_score(opportunity)
-    opportunity.save(update_fields=["score", "updated_at"])
+    score, reason = calculate_score_and_reason(opportunity)
+    opportunity.score = score
+    opportunity.lead_reason = reason
+    opportunity.save(update_fields=["score", "lead_reason", "updated_at"])
     return opportunity
 
 
@@ -91,6 +99,12 @@ def _format_lead_reason(port, lead: dict, port_area: str) -> str:
     """Format short human-readable lead reason string (max 200 chars)."""
     if port_area == ZONE_ANCHORAGE:
         text = f"At {port.name.upper()} ANCH since last signal"
+    elif port_area in (PORT_AREA_ANCHORAGE_BOUND, "anchorage_bound"):
+        eta_val = lead.get("eta")
+        eta_str = eta_val.strftime("%Y-%m-%d %H:%M UTC") if eta_val else "unknown"
+        src_str = lead.get("eta_source") or "unknown"
+        port_code = port.un_locode or port.name
+        text = f"Anchorage bound to {port_code}, ETA {eta_str} ({src_str})"
     elif port_area == "inbound":
         eta_val = lead.get("eta")
         eta_str = eta_val.strftime("%Y-%m-%d %H:%M UTC") if eta_val else "unknown"
@@ -119,6 +133,8 @@ def apply_lead(
 
     Eligibility rules:
     - port_area == "anchorage": eligible, zone = ZONE_ANCHORAGE.
+    - port_area == "anchorage_bound" and lead["eta"] is not None and 0 < hours_to_eta <= horizon_hours:
+      eligible, zone = ZONE_ANCHORAGE_BOUND.
     - port_area == "inbound" and lead["eta"] is not None and 0 < hours_to_eta <= horizon_hours:
       eligible, zone classified by classify_zone_by_eta(lead["eta"]).
     - Everything else: "skipped" (returns (None, "skipped")).
@@ -133,6 +149,13 @@ def apply_lead(
     zone = None
     if port_area == ZONE_ANCHORAGE:
         zone = ZONE_ANCHORAGE
+    elif port_area in (PORT_AREA_ANCHORAGE_BOUND, "anchorage_bound"):
+        eta = lead.get("eta")
+        hours_to_eta = lead.get("hours_to_eta")
+        if eta is not None and hours_to_eta is not None and 0 < hours_to_eta <= horizon_hours:
+            zone = ZONE_ANCHORAGE_BOUND
+        else:
+            return None, "skipped"
     elif port_area == "inbound":
         eta = lead.get("eta")
         hours_to_eta = lead.get("hours_to_eta")
@@ -154,11 +177,16 @@ def apply_lead(
         existing.eta_source = lead.get("eta_source", "") or ""
         existing.is_inbound = bool(lead.get("is_inbound", False))
         existing.lead_reason = lead_reason
+        if lead.get("came_from_target_port"):
+            existing.came_from_target_port = lead["came_from_target_port"]
 
         if port_area == ZONE_ANCHORAGE:
             touch_opportunity_zone_from_proximity(existing)
-        else:
+        elif port_area in (PORT_AREA_ANCHORAGE_BOUND, "anchorage_bound"):
             if existing.zone != ZONE_ANCHORAGE:
+                existing.zone = ZONE_ANCHORAGE_BOUND
+        else:
+            if existing.zone not in (ZONE_ANCHORAGE, ZONE_ANCHORAGE_BOUND):
                 existing.zone = zone
 
         zone_or_eta_changed = (existing.zone != old_zone or existing.eta != old_eta)
@@ -183,6 +211,8 @@ def apply_lead(
     opportunity.eta_source = lead.get("eta_source", "") or ""
     opportunity.is_inbound = bool(lead.get("is_inbound", False))
     opportunity.lead_reason = lead_reason
+    if lead.get("came_from_target_port"):
+        opportunity.came_from_target_port = lead["came_from_target_port"]
     opportunity.save(
         update_fields=[
             "eta",

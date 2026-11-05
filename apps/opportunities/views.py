@@ -32,6 +32,9 @@ class OpportunityBandFilter(django_filters.FilterSet):
     existing stage/zone/port/vessel filters.  Since `band` is not a stored
     column, we translate it into score-range lookups against SCORE_BANDS."""
 
+    zone = django_filters.CharFilter(
+        method="filter_zone", label="Arrival zone"
+    )
     band = django_filters.CharFilter(
         method="filter_band", label="Priority band (HOT/HIGH/MEDIUM/LOW)"
     )
@@ -39,6 +42,16 @@ class OpportunityBandFilter(django_filters.FilterSet):
     class Meta:
         model = Opportunity
         fields = ["stage", "zone", "port", "vessel"]
+
+    def filter_zone(self, queryset, name, value):
+        if not value:
+            return queryset
+        zones = [z.strip() for z in value.split(",") if z.strip()]
+        if len(zones) > 1:
+            return queryset.filter(zone__in=zones)
+        if value == "anchorage":
+            return queryset.filter(zone__in=["anchorage", "anchorage_bound"])
+        return queryset.filter(zone=value)
 
     def filter_band(self, queryset, name, value):
         from django.conf import settings

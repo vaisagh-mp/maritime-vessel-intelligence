@@ -19,6 +19,7 @@ import {
     toQuery,
     VALID_BANDS,
     VALID_STAGES,
+    BOARD_COLUMNS,
     ZONES,
 } from "./board-logic.js";
 import { bandBadge, el, errorState, formatNumber, formatUtc, onReady, registerGlobalErrorHandlers, renderPageCrash } from "./ui.js";
@@ -153,6 +154,10 @@ function createLeadCard(item) {
     const stageLabel = item.stage_label || item.stage || "";
     const stageEl = el("span", { class: "card-stage" }, stageLabel);
     const footerChildren = [stageEl];
+
+    if (item.zone === "anchorage_bound" || item.zone_label === "Anchorage bound") {
+        footerChildren.push(el("span", { class: "badge badge-zone" }, "Anchorage bound"));
+    }
 
     if (item.is_inbound) {
         footerChildren.push(el("span", { class: "badge-inbound" }, "Inbound"));
@@ -291,7 +296,7 @@ async function loadMoreColumn(zoneId) {
 function refreshAllColumns() {
     updateExportLink();
     updateUpdatedTime();
-    for (const zone of ZONES) {
+    for (const zone of BOARD_COLUMNS) {
         loadColumn(zone.id);
     }
 }

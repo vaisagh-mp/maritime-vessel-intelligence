@@ -12,10 +12,28 @@ export const VALID_STAGES = STAGES.map((s) => s.value);
 
 export const STAGE_LABELS = Object.fromEntries(STAGES.map((s) => [s.value, s.label]));
 
+export const BOARD_COLUMNS = [
+    { id: "24h", label: "24 hour priority" },
+    { id: "72h", label: "72 hour approach" },
+    { id: "anchorage", label: "Anchorage / port" },
+];
+
+export const ZONE_TO_COLUMN = {
+    "24h": "24h",
+    "72h": "72h",
+    "anchorage": "anchorage",
+    "anchorage_bound": "anchorage",
+};
+
+export function zoneToColumn(zone) {
+    return ZONE_TO_COLUMN[zone] || "anchorage";
+}
+
 export const ZONES = [
     { id: "24h", label: "24 hour priority" },
     { id: "72h", label: "72 hour approach" },
     { id: "anchorage", label: "Anchorage / port" },
+    { id: "anchorage_bound", label: "Anchorage bound" },
 ];
 
 /**
