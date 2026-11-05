@@ -4,35 +4,13 @@
  * Contains NO DOM operations and NO network calls (fetch).
  */
 
+import { STAGES } from "./stages.js";
+
 export const VALID_BANDS = ["HOT", "HIGH", "MEDIUM", "LOW"];
 
-export const VALID_STAGES = [
-    "detected",
-    "qualifying",
-    "ready_for_review",
-    "contacted",
-    "replied",
-    "quote_requested",
-    "quoted",
-    "negotiation",
-    "won",
-    "lost",
-    "follow_up_later",
-];
+export const VALID_STAGES = STAGES.map((s) => s.value);
 
-export const STAGE_LABELS = {
-    detected: "Detected",
-    qualifying: "Qualifying",
-    ready_for_review: "Ready For Review",
-    contacted: "Contacted",
-    replied: "Replied",
-    quote_requested: "Quote Requested",
-    quoted: "Quoted",
-    negotiation: "Negotiation",
-    won: "Won",
-    lost: "Lost",
-    follow_up_later: "Follow Up Later",
-};
+export const STAGE_LABELS = Object.fromEntries(STAGES.map((s) => [s.value, s.label]));
 
 export const ZONES = [
     { id: "24h", label: "24 hour priority" },
