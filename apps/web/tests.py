@@ -436,20 +436,22 @@ class TestWebFoundations(TestCase):
         vessel_test = os.path.join(tests_dir, "vessel-logic.test.mjs")
         lead_test = os.path.join(tests_dir, "lead-logic.test.mjs")
         ui_test = os.path.join(tests_dir, "ui.test.mjs")
+        undeclared_test = os.path.join(tests_dir, "undeclared.test.mjs")
 
         self.assertTrue(os.path.exists(board_test), f"Test file {board_test} does not exist.")
         self.assertTrue(os.path.exists(vessel_test), f"Test file {vessel_test} does not exist.")
         self.assertTrue(os.path.exists(lead_test), f"Test file {lead_test} does not exist.")
         self.assertTrue(os.path.exists(ui_test), f"Test file {ui_test} does not exist.")
+        self.assertTrue(os.path.exists(undeclared_test), f"Test file {undeclared_test} does not exist.")
 
         result = subprocess.run(
-            [node_bin, "--test", board_test, vessel_test, lead_test, ui_test],
+            [node_bin, "--test", board_test, vessel_test, lead_test, ui_test, undeclared_test],
             capture_output=True,
             text=True,
         )
         if result.returncode != 0:
             self.fail(f"Node tests failed:\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}")
-        self.assertIn("pass 45", result.stdout)
+        self.assertIn("pass 55", result.stdout)
 
     # 16. Vessel and Observation API contracts: serializer fields read-only and observations ordered newest first
     def test_vessel_and_observation_api_contracts(self):

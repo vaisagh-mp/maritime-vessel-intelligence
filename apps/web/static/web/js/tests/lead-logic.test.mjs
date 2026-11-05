@@ -12,6 +12,7 @@ import {
     needsConfirm,
     validateNote,
     noteCounterText,
+    noteFormState,
     buildPatchBody,
     actorName,
     historyLabel,
@@ -278,3 +279,245 @@ test("formatErrorMessage: ensures clean icon-free Error: prefix without duplicat
     );
 });
 
+
+test("robustness: validateNote handles element-like object, number, null, undefined, normal string without throwing", () => {
+    const elementLike = { value: "some text", tagName: "TEXTAREA" };
+    assert.deepEqual(validateNote(elementLike), { ok: false, trimmed: "", error: "Note cannot be empty." });
+    assert.deepEqual(validateNote(42), { ok: false, trimmed: "", error: "Note cannot be empty." });
+    assert.deepEqual(validateNote(null), { ok: false, trimmed: "", error: "Note cannot be empty." });
+    assert.deepEqual(validateNote(undefined), { ok: false, trimmed: "", error: "Note cannot be empty." });
+    assert.deepEqual(validateNote("  Valid note content  "), { ok: true, trimmed: "Valid note content", error: null });
+});
+
+test("robustness: noteCounterText handles element-like object, number, null, undefined, normal string without throwing", () => {
+    const elementLike = { value: "some text", tagName: "TEXTAREA" };
+    assert.equal(noteCounterText(elementLike), "0 / 2000");
+    assert.equal(noteCounterText(42), "0 / 2000");
+    assert.equal(noteCounterText(null), "0 / 2000");
+    assert.equal(noteCounterText(undefined), "0 / 2000");
+    assert.equal(noteCounterText("Valid note"), "10 / 2000");
+    assert.equal(noteCounterText("  Trimmed  "), "7 / 2000");
+});
+
+test("robustness: canSubmitStage handles element-like object, number, null, undefined, normal string without throwing", () => {
+    const elementLike = { value: "some text", tagName: "TEXTAREA" };
+
+    // Passed as note argument
+    assert.equal(canSubmitStage("detected", "qualifying", elementLike, false), true);
+    assert.equal(canSubmitStage("detected", "qualifying", 42, false), true);
+    assert.equal(canSubmitStage("detected", "qualifying", null, false), true);
+    assert.equal(canSubmitStage("detected", "qualifying", undefined, false), true);
+    assert.equal(canSubmitStage("detected", "qualifying", "Normal note string", false), true);
+
+    // Passed as stage arguments
+    assert.equal(canSubmitStage(elementLike, "qualifying", "", false), true);
+    assert.equal(canSubmitStage("detected", elementLike, "", false), false);
+    assert.equal(canSubmitStage(42, "qualifying", "", false), true);
+    assert.equal(canSubmitStage("detected", 42, "", false), false);
+    assert.equal(canSubmitStage(null, "qualifying", "", false), true);
+    assert.equal(canSubmitStage("detected", null, "", false), false);
+    assert.equal(canSubmitStage(undefined, "qualifying", "", false), true);
+    assert.equal(canSubmitStage("detected", undefined, "", false), false);
+});
+
+test("robustness: buildPatchBody handles element-like object, number, null, undefined, normal string without throwing", () => {
+    const elementLike = { value: "some text", tagName: "TEXTAREA" };
+
+    // Non-string notes are safely ignored / omitted
+    assert.deepEqual(buildPatchBody("detected", "qualifying", elementLike), {
+        stage: "qualifying",
+        expected_stage: "detected",
+    });
+    assert.deepEqual(buildPatchBody("detected", "qualifying", 42), {
+        stage: "qualifying",
+        expected_stage: "detected",
+    });
+    assert.deepEqual(buildPatchBody("detected", "qualifying", null), {
+        stage: "qualifying",
+        expected_stage: "detected",
+    });
+    assert.deepEqual(buildPatchBody("detected", "qualifying", undefined), {
+        stage: "qualifying",
+        expected_stage: "detected",
+    });
+    assert.deepEqual(buildPatchBody("detected", "qualifying", "  Transition note  "), {
+        stage: "qualifying",
+        expected_stage: "detected",
+        note: "Transition note",
+    });
+
+    // Non-string stages
+    assert.deepEqual(buildPatchBody(elementLike, "qualifying"), {
+        stage: "qualifying",
+        expected_stage: "",
+    });
+    assert.deepEqual(buildPatchBody("detected", elementLike), {
+        stage: "",
+        expected_stage: "detected",
+    });
+});
+
+test("page flow: type note text, check counter, submit, new note appears at top, textarea and counter reset", () => {
+    // 1. Initial page state with existing notes
+    const notesList = [
+        { id: 1, text: "Existing first note", author: { full_name: "Alice" } },
+    ];
+
+    // Simulated DOM element references
+    const textarea = { value: "", tagName: "TEXTAREA" };
+    const counter = { textContent: noteCounterText(textarea.value) };
+    const saveBtn = { disabled: true };
+
+    assert.equal(counter.textContent, "0 / 2000");
+    assert.equal(saveBtn.disabled, true);
+
+    // 2. User types note text ("Discussed berthing window with agent")
+    textarea.value = "Discussed berthing window with agent";
+
+    // Input event handler logic (as in lead.js initNoteForm)
+    counter.textContent = noteCounterText(textarea.value);
+    const validationOnInput = validateNote(textarea.value);
+    saveBtn.disabled = !validationOnInput.ok;
+
+    assert.equal(counter.textContent, "36 / 2000");
+    assert.equal(validationOnInput.ok, true);
+    assert.equal(saveBtn.disabled, false);
+
+    // 3. User submits note form
+    const validationOnSubmit = validateNote(textarea.value);
+    assert.equal(validationOnSubmit.ok, true);
+
+    // Mock API response for created note
+    const createdNote = {
+        id: 2,
+        text: validationOnSubmit.trimmed,
+        author: { full_name: "Bob Agent" },
+        created_at: "2026-11-05T14:00:00Z",
+    };
+
+    // Post-submit reset (as in lead.js initNoteForm)
+    textarea.value = "";
+    counter.textContent = noteCounterText(textarea.value);
+    saveBtn.disabled = true;
+
+    // Prepend new note immediately to the top of the notes list
+    notesList.unshift(createdNote);
+
+    // Assert new note appears at the top (index 0)
+    assert.equal(notesList.length, 2);
+    assert.equal(notesList[0].id, 2);
+    assert.equal(notesList[0].text, "Discussed berthing window with agent");
+    assert.equal(notesList[1].id, 1);
+
+    // Assert textarea and counter are cleanly reset
+    assert.equal(textarea.value, "");
+    assert.equal(counter.textContent, "0 / 2000");
+    assert.equal(saveBtn.disabled, true);
+
+    // 4. Same note box in the stage form flow
+    const stageSelect = { value: "contacted" };
+    const stageTextarea = { value: "", tagName: "TEXTAREA" };
+    const stageCounter = { textContent: noteCounterText(stageTextarea.value) };
+    const stageUpdateBtn = { disabled: true };
+    const currentOpportunity = { stage: "qualifying" };
+
+    // Stage form input event
+    stageTextarea.value = "Sent introductory email with tariff schedule";
+    stageCounter.textContent = noteCounterText(stageTextarea.value);
+    const canSubmit = canSubmitStage(
+        currentOpportunity.stage,
+        stageSelect.value,
+        stageTextarea.value,
+        false
+    );
+    stageUpdateBtn.disabled = !canSubmit;
+
+    assert.equal(stageCounter.textContent, "44 / 2000");
+    assert.equal(stageUpdateBtn.disabled, false);
+
+    // Stage form submit / patch body creation
+    const patchBody = buildPatchBody(
+        currentOpportunity.stage,
+        stageSelect.value,
+        stageTextarea.value
+    );
+    assert.deepEqual(patchBody, {
+        stage: "contacted",
+        expected_stage: "qualifying",
+        note: "Sent introductory email with tariff schedule",
+    });
+
+    // Reset stage note input after patch
+    stageTextarea.value = "";
+    stageCounter.textContent = noteCounterText(stageTextarea.value);
+    assert.equal(stageTextarea.value, "");
+    assert.equal(stageCounter.textContent, "0 / 2000");
+});
+
+test("noteFormState: handles empty, spaces only, 1 char, exactly 2000, 2001, and busy true", () => {
+    // 1. empty (empty string, null, undefined)
+    assert.deepEqual(noteFormState("", false), {
+        trimmed: "",
+        counterText: "0 / 2000",
+        canSubmit: false,
+        error: "Note cannot be empty.",
+    });
+    assert.deepEqual(noteFormState(null, false), {
+        trimmed: "",
+        counterText: "0 / 2000",
+        canSubmit: false,
+        error: "Note cannot be empty.",
+    });
+    assert.deepEqual(noteFormState(undefined, false), {
+        trimmed: "",
+        counterText: "0 / 2000",
+        canSubmit: false,
+        error: "Note cannot be empty.",
+    });
+
+    // 2. spaces only
+    assert.deepEqual(noteFormState("   \t\n  ", false), {
+        trimmed: "",
+        counterText: "0 / 2000",
+        canSubmit: false,
+        error: "Note cannot be empty.",
+    });
+
+    // 3. 1 char
+    assert.deepEqual(noteFormState("a", false), {
+        trimmed: "a",
+        counterText: "1 / 2000",
+        canSubmit: true,
+        error: null,
+    });
+    assert.deepEqual(noteFormState("   a   ", false), {
+        trimmed: "a",
+        counterText: "1 / 2000",
+        canSubmit: true,
+        error: null,
+    });
+
+    // 4. exactly 2000 chars
+    const text2000 = "x".repeat(2000);
+    assert.deepEqual(noteFormState(text2000, false), {
+        trimmed: text2000,
+        counterText: "2000 / 2000",
+        canSubmit: true,
+        error: null,
+    });
+
+    // 5. 2001 chars
+    const text2001 = "x".repeat(2001);
+    const res2001 = noteFormState(text2001, false);
+    assert.equal(res2001.counterText, "2001 / 2000");
+    assert.equal(res2001.canSubmit, false);
+    assert.equal(res2001.error, "Ensure this field has no more than 2000 characters.");
+
+    // 6. busy true
+    assert.deepEqual(noteFormState("Follow up with charterer", true), {
+        trimmed: "Follow up with charterer",
+        counterText: "24 / 2000",
+        canSubmit: false,
+        error: null,
+    });
+});

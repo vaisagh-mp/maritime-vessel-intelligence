@@ -26,6 +26,7 @@ import {
     needsConfirm,
     validateNote,
     noteCounterText,
+    noteFormState,
     buildPatchBody,
     actorName,
     historyLabel,
@@ -249,8 +250,9 @@ function updateStageButtonState() {
     if (!select || !textarea || !updateBtn || !currentOpportunity) return;
 
     const selectedStage = select.value;
-    const trimmedNote = textarea.value.trim();
-    const canSubmit = canSubmitStage(currentOpportunity.stage, selectedStage, trimmedNote, isStageBusy);
+    const noteVal = textarea ? textarea.value : "";
+    const trimmedNote = typeof noteVal === "string" ? noteVal.trim() : "";
+    const canSubmit = canSubmitStage(currentOpportunity.stage, selectedStage, noteVal, isStageBusy);
 
     updateBtn.disabled = !canSubmit;
 
@@ -285,7 +287,7 @@ function initStageForm() {
 
     textarea.addEventListener("input", () => {
         if (counter) {
-            counter.textContent = noteCounterText(textarea.value.length, 2000);
+            counter.textContent = noteCounterText(textarea.value);
         }
         if (errorEl) errorEl.classList.add("hidden");
         updateStageButtonState();
@@ -386,7 +388,7 @@ async function executeStagePatch(newStage, noteText) {
             textarea.value = "";
         }
         if (counter) {
-            counter.textContent = noteCounterText(0, 2000);
+            counter.textContent = noteCounterText(textarea.value);
         }
 
         // Refresh first page of notes and history
@@ -521,33 +523,33 @@ function initNoteForm() {
     if (!form || !textarea || !saveBtn) return;
 
     textarea.addEventListener("input", () => {
-        const len = textarea.value.length;
+        const state = noteFormState(textarea.value, false);
         if (counter) {
-            counter.textContent = noteCounterText(len, 2000);
+            counter.textContent = state.counterText;
         }
-        const check = validateNote(textarea.value);
-        saveBtn.disabled = !check.ok;
+        saveBtn.disabled = !state.canSubmit;
         if (errorEl) errorEl.classList.add("hidden");
     });
 
     form.addEventListener("submit", async (e) => {
         e.preventDefault();
-        const check = validateNote(textarea.value);
-        if (!check.ok) return;
+        const state = noteFormState(textarea.value, false);
+        if (!state.canSubmit) return;
 
         saveBtn.disabled = true;
         if (errorEl) errorEl.classList.add("hidden");
 
         try {
             const created = await api.post(`/api/v1/opportunities/${leadId}/notes/`, {
-                text: check.trimmed,
+                text: state.trimmed,
             });
 
             toast("Note saved", "success");
 
             // Reset textarea
             textarea.value = "";
-            if (counter) counter.textContent = noteCounterText(0, 2000);
+            const resetState = noteFormState(textarea.value, false);
+            if (counter) counter.textContent = resetState.counterText;
             saveBtn.disabled = true;
 
             // Remove empty state if present

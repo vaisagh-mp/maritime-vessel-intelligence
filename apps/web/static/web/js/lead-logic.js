@@ -90,10 +90,8 @@ export function needsConfirm(newStage) {
  * @returns {{ ok: boolean, trimmed: string, error: string|null }}
  */
 export function validateNote(text) {
-    if (text === null || text === undefined) {
-        return { ok: false, trimmed: "", error: "Note cannot be empty." };
-    }
-    const trimmed = String(text).trim();
+    const str = typeof text === "string" ? text : "";
+    const trimmed = str.trim();
     if (trimmed.length === 0) {
         return { ok: false, trimmed: "", error: "Note cannot be empty." };
     }
@@ -109,9 +107,29 @@ export function validateNote(text) {
  * @param {string|null} text
  * @returns {string}
  */
-export function noteCounterText(text) {
-    const trimmedLen = (text || "").trim().length;
-    return `${trimmedLen} / 2000`;
+export function noteCounterText(text, max = 2000) {
+    const str = typeof text === "string" ? text : "";
+    const trimmedLen = str.trim().length;
+    return `${trimmedLen} / ${max}`;
+}
+
+/**
+ * Compute complete state for the note input form.
+ * @param {string|null|undefined} text - Note input text
+ * @param {boolean} [busy=false] - Whether save/submit is in flight
+ * @returns {{ trimmed: string, counterText: string, canSubmit: boolean, error: string|null }}
+ */
+export function noteFormState(text, busy = false) {
+    const isBusy = Boolean(busy);
+    const counterText = noteCounterText(text);
+    const validation = validateNote(text);
+    const canSubmit = validation.ok && !isBusy;
+    return {
+        trimmed: validation.trimmed,
+        counterText,
+        canSubmit,
+        error: validation.error,
+    };
 }
 
 /**
@@ -124,11 +142,11 @@ export function noteCounterText(text) {
  */
 export function buildPatchBody(shownStage, newStage, note = null) {
     const body = {
-        stage: newStage,
-        expected_stage: shownStage,
+        stage: typeof newStage === "string" ? newStage.trim() : "",
+        expected_stage: typeof shownStage === "string" ? shownStage.trim() : "",
     };
-    if (note !== null && note !== undefined) {
-        const trimmed = String(note).trim();
+    if (typeof note === "string") {
+        const trimmed = note.trim();
         if (trimmed.length > 0) {
             body.note = trimmed;
         }
@@ -196,9 +214,12 @@ export function canSubmitStage(shownStage, selectedStage, note = "", busy = fals
     if (busy) {
         return false;
     }
-    if (!selectedStage || typeof selectedStage !== "string") {
+    const curStage = typeof shownStage === "string" ? shownStage.trim() : "";
+    const sStage = typeof selectedStage === "string" ? selectedStage.trim() : "";
+    const _safeNote = typeof note === "string" ? note.trim() : "";
+    if (sStage.length === 0) {
         return false;
     }
-    return selectedStage !== shownStage;
+    return sStage !== curStage;
 }
 
