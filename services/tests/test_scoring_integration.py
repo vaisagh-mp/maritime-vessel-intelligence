@@ -58,16 +58,16 @@ class UpdateEtaScoringTests(TestCase):
     def test_score_increases_with_near_eta(self):
         vessel = _vessel()
         port = _port()
-        opp, _ = get_or_create_open_opportunity(vessel, port)
+        opp, _ = get_or_create_open_opportunity(vessel, port, zone="72h")
         initial_score = opp.score
 
         # Set ETA to 12h from now (should move to 24h zone → higher ETA signal).
         near_eta = timezone.now() + timedelta(hours=12)
         update_opportunity_eta(opp, near_eta)
 
-        # Score should be at least as high (zone was already anchorage → still 30).
+        # Score should increase (zone moved from 72h to 24h).
         opp.refresh_from_db()
-        self.assertGreaterEqual(opp.score, initial_score)
+        self.assertGreater(opp.score, initial_score)
 
     def test_zone_changes_on_eta_update(self):
         vessel = _vessel()

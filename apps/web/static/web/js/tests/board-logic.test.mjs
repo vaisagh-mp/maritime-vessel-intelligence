@@ -12,6 +12,9 @@ import {
     etaRelative,
     etaSourceLabel,
     summarise,
+    ZONES,
+    BOARD_COLUMNS,
+    zoneToColumn,
 } from "../board-logic.js";
 
 test("readFilters: parses valid query parameters", () => {
@@ -229,4 +232,20 @@ test("activeFilterCount & isDefault: several changes and counting rules", () => 
 
     // search with actual text is active
     assert.equal(activeFilterCount({ ...defaultFilters(), q: "  tanker  " }), 1);
+});
+
+test("zones and board column mapping: anchorage_bound mapped to anchorage column", () => {
+    const zoneIds = ZONES.map((z) => z.id);
+    assert.ok(zoneIds.includes("anchorage_bound"));
+    assert.ok(zoneIds.includes("anchorage"));
+    assert.ok(zoneIds.includes("24h"));
+    assert.ok(zoneIds.includes("72h"));
+
+    assert.equal(BOARD_COLUMNS.length, 3);
+    assert.deepEqual(BOARD_COLUMNS.map((c) => c.id), ["24h", "72h", "anchorage"]);
+
+    assert.equal(zoneToColumn("anchorage_bound"), "anchorage");
+    assert.equal(zoneToColumn("anchorage"), "anchorage");
+    assert.equal(zoneToColumn("24h"), "24h");
+    assert.equal(zoneToColumn("72h"), "72h");
 });

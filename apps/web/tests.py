@@ -451,7 +451,7 @@ class TestWebFoundations(TestCase):
         )
         if result.returncode != 0:
             self.fail(f"Node tests failed:\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}")
-        self.assertIn("pass 55", result.stdout)
+        self.assertIn("pass 56", result.stdout)
 
     # 16. Vessel and Observation API contracts: serializer fields read-only and observations ordered newest first
     def test_vessel_and_observation_api_contracts(self):

@@ -64,54 +64,56 @@ class EtaZoneSignalTests(TestCase):
         score = calculate_score(opp)
         self.assertGreaterEqual(score, 30)
 
-    def test_24h_zone_scores_30(self):
+    def test_anchorage_bound_zone_scores_25(self):
+        opp = _opportunity(self.vessel, self.port, zone="anchorage_bound")
+        score = calculate_score(opp)
+        self.assertGreaterEqual(score, 25)
+
+    def test_24h_zone_scores_15(self):
         opp = _opportunity(self.vessel, self.port, zone="24h")
         score = calculate_score(opp)
-        self.assertGreaterEqual(score, 30)
+        self.assertGreaterEqual(score, 15)
 
-    def test_72h_zone_no_eta_scores_10(self):
+    def test_72h_zone_no_eta_scores_5(self):
         opp = _opportunity(self.vessel, self.port, zone="72h", eta=None)
         score = calculate_score(opp)
-        # Base should include the zone signal of 10
-        self.assertGreaterEqual(score, 10)
+        self.assertGreaterEqual(score, 5)
 
-    def test_72h_zone_eta_within_24h_scores_30(self):
+    def test_72h_zone_eta_within_24h_scores_15(self):
         eta = timezone.now() + timedelta(hours=12)
         opp = _opportunity(self.vessel, self.port, zone="72h", eta=eta)
         score = calculate_score(opp)
-        self.assertGreaterEqual(score, 30)
+        self.assertGreaterEqual(score, 15)
 
     def test_72h_zone_eta_at_exactly_24h(self):
         eta = timezone.now() + timedelta(hours=24)
         opp = _opportunity(self.vessel, self.port, zone="72h", eta=eta)
         score = calculate_score(opp)
-        # Exactly 24h boundary → should be 30 (within the 24h window)
-        self.assertGreaterEqual(score, 30)
+        self.assertGreaterEqual(score, 15)
 
-    def test_72h_zone_eta_between_24h_and_48h_scores_20(self):
+    def test_72h_zone_eta_between_24h_and_48h_scores_10(self):
         eta = timezone.now() + timedelta(hours=36)
         opp = _opportunity(self.vessel, self.port, zone="72h", eta=eta)
         score = calculate_score(opp)
-        self.assertGreaterEqual(score, 20)
+        self.assertGreaterEqual(score, 10)
 
     def test_72h_zone_eta_at_exactly_48h(self):
         eta = timezone.now() + timedelta(hours=48)
         opp = _opportunity(self.vessel, self.port, zone="72h", eta=eta)
         score = calculate_score(opp)
-        # Exactly 48h → should still be in the 24-48h bucket (+20)
-        self.assertGreaterEqual(score, 20)
+        self.assertGreaterEqual(score, 10)
 
-    def test_72h_zone_eta_between_48h_and_72h_scores_10(self):
+    def test_72h_zone_eta_between_48h_and_72h_scores_5(self):
         eta = timezone.now() + timedelta(hours=60)
         opp = _opportunity(self.vessel, self.port, zone="72h", eta=eta)
         score = calculate_score(opp)
-        self.assertGreaterEqual(score, 10)
+        self.assertGreaterEqual(score, 5)
 
     def test_72h_zone_eta_at_exactly_72h(self):
         eta = timezone.now() + timedelta(hours=72)
         opp = _opportunity(self.vessel, self.port, zone="72h", eta=eta)
         score = calculate_score(opp)
-        self.assertGreaterEqual(score, 10)
+        self.assertGreaterEqual(score, 5)
 
 
 # ---------------------------------------------------------------------------
@@ -317,25 +319,26 @@ class LargeFleetSignalTests(TestCase):
     def setUp(self):
         self.port = _port()
 
-    def test_large_dwt_adds_10(self):
-        vessel = _vessel(dwt=82000)
+    def test_large_grt_adds_15(self):
+        vessel = _vessel(grt=50000)
         opp = _opportunity(vessel, self.port)
         from services.scoring_service import _score_large_fleet
-        self.assertEqual(_score_large_fleet(vessel), 10)
+        self.assertEqual(_score_large_fleet(vessel), 15)
 
-    def test_small_dwt_adds_0(self):
-        vessel = _vessel(dwt=25000)
+    def test_medium_grt_adds_12(self):
+        vessel = _vessel(grt=25000)
+        opp = _opportunity(vessel, self.port)
+        from services.scoring_service import _score_large_fleet
+        self.assertEqual(_score_large_fleet(vessel), 12)
+
+    def test_small_grt_adds_0(self):
+        vessel = _vessel(grt=2500)
         opp = _opportunity(vessel, self.port)
         from services.scoring_service import _score_large_fleet
         self.assertEqual(_score_large_fleet(vessel), 0)
 
-    def test_exactly_at_threshold_adds_10(self):
-        vessel = _vessel(dwt=50000)
-        from services.scoring_service import _score_large_fleet
-        self.assertEqual(_score_large_fleet(vessel), 10)
-
-    def test_null_dwt_adds_0(self):
-        vessel = _vessel(dwt=None)
+    def test_null_grt_adds_0(self):
+        vessel = _vessel(grt=None)
         from services.scoring_service import _score_large_fleet
         self.assertEqual(_score_large_fleet(vessel), 0)
 
@@ -397,7 +400,7 @@ class NegativeClampTests(TestCase):
 class CombinedSignalsTests(TestCase):
     def test_multiple_signals_stack(self):
         port = _port()
-        vessel = _vessel(vessel_type="Bulk Carrier", dwt=82000)
+        vessel = _vessel(vessel_type="Bulk Carrier", dwt=82000, grt=50000)
         company = Company.objects.create(name="Big Manager", company_type="manager", priority="high")
         VesselRelationship.objects.create(
             vessel=vessel, company=company, role="manager", source="test", verified=True,
@@ -406,7 +409,7 @@ class CombinedSignalsTests(TestCase):
 
         score = calculate_score(opp)
         # anchorage (30) + exact segment (20) + priority manager (20)
-        # + verified contact (20) + large DWT (10) = 100
+        # + verified contact (20) + size GRT (15) = 105, capped at 100
         self.assertEqual(score, 100)
 
 
