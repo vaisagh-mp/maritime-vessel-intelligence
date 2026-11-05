@@ -433,19 +433,21 @@ class TestWebFoundations(TestCase):
         board_test = os.path.join(tests_dir, "board-logic.test.mjs")
         vessel_test = os.path.join(tests_dir, "vessel-logic.test.mjs")
         lead_test = os.path.join(tests_dir, "lead-logic.test.mjs")
+        ui_test = os.path.join(tests_dir, "ui.test.mjs")
 
         self.assertTrue(os.path.exists(board_test), f"Test file {board_test} does not exist.")
         self.assertTrue(os.path.exists(vessel_test), f"Test file {vessel_test} does not exist.")
         self.assertTrue(os.path.exists(lead_test), f"Test file {lead_test} does not exist.")
+        self.assertTrue(os.path.exists(ui_test), f"Test file {ui_test} does not exist.")
 
         result = subprocess.run(
-            [node_bin, "--test", board_test, vessel_test, lead_test],
+            [node_bin, "--test", board_test, vessel_test, lead_test, ui_test],
             capture_output=True,
             text=True,
         )
         if result.returncode != 0:
             self.fail(f"Node tests failed:\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}")
-        self.assertIn("pass 38", result.stdout)
+        self.assertIn("pass 41", result.stdout)
 
     # 16. Vessel and Observation API contracts: serializer fields read-only and observations ordered newest first
     def test_vessel_and_observation_api_contracts(self):
@@ -559,3 +561,45 @@ class TestWebFoundations(TestCase):
                     match,
                     f"Hardcoded color '{match.group(0) if match else ''}' found in {filename}",
                 )
+
+    # 19. Stale module guard: meta static-version exists and entry scripts are versioned with ?v=\d+
+    def test_static_version_meta_and_entry_scripts(self):
+        self.client.login(username="admin_user", password="adminpassword123")
+
+        pages = [
+            ("/", r"board\.js\?v=\d+"),
+            (f"/vessels/{self.vessel.id}/", r"vessel\.js\?v=\d+"),
+            (f"/leads/{self.opportunity.id}/", r"lead\.js\?v=\d+"),
+        ]
+
+        for path, script_pattern in pages:
+            res = self.client.get(path)
+            self.assertEqual(res.status_code, 200, f"Failed for {path}")
+            html = res.content.decode("utf-8")
+
+            # Check meta static-version tag
+            meta_match = re.search(r'<meta\s+name=["\']static-version["\']\s+content=["\'](\d+)["\']', html)
+            self.assertIsNotNone(meta_match, f"<meta name='static-version'> missing or non-numeric on {path}")
+
+            # Check entry script URL contains ?v=\d+
+            script_match = re.search(script_pattern, html)
+            self.assertIsNotNone(script_match, f"Entry script matching '{script_pattern}' not found on {path}")
+
+        self.client.logout()
+
+    # 20. Controller hygiene: board.js, vessel.js, and lead.js use onReady instead of raw DOMContentLoaded listener
+    def test_controllers_use_on_ready_hygiene(self):
+        js_dir = os.path.join(settings.BASE_DIR, "apps", "web", "static", "web", "js")
+        controllers = ["board.js", "vessel.js", "lead.js"]
+
+        for filename in controllers:
+            filepath = os.path.join(js_dir, filename)
+            with open(filepath, "r", encoding="utf-8") as f:
+                content = f.read()
+
+            self.assertIn("onReady(", content, f"{filename} must use onReady(...) for safe lifecycle execution")
+            self.assertNotIn(
+                'document.addEventListener("DOMContentLoaded"',
+                content,
+                f"{filename} must not attach raw DOMContentLoaded listener directly; use onReady instead",
+            )
