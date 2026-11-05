@@ -1,19 +1,23 @@
 """
 apps/web/tests.py
 
-Comprehensive tests for Frontend F0 to F4:
+Comprehensive tests for Frontend F0 to F5:
 - Authentication & route protection (RoleRequiredMixin: admin & bd_manager vs no-role 403)
 - Navigation and role visibility (web_user_role context processor)
 - Vessel detail page (/vessels/<id>/): 200 for roles, 404 for missing, data-vessel-id attribute
-- Lead placeholder page (/leads/<id>/)
-- Static file references & file existence (vessel.css, vessel.js, vessel-logic.js)
+- Lead detail page (/leads/<id>/): 200 for roles, 404 for missing, data-lead-id attribute
+- Shared stage definitions consistency (stages.js matches Django OPPORTUNITY_STAGE_CHOICES & CLOSED_STAGES)
+- Lead page safety: no email/mailto, no outreach controls or send triggers
+- Static file references & file existence (lead.css, lead.js, lead-logic.js, stages.js, vessel.*, board.*)
 - Security rules: no inline scripts/styles, no unsafe DOM sinks
 - Centralized fetch() policy
-- Node.js test execution for board-logic and vessel-logic pure functions
+- Node.js test execution for board-logic, vessel-logic, and lead-logic pure functions (36 tests)
 - Vessel and Observation API serialization contracts and ordering
 """
 
+import json
 import os
+import re
 import shutil
 import subprocess
 from datetime import datetime, timezone
@@ -24,8 +28,11 @@ from django.contrib.staticfiles import finders
 from django.test import Client, TestCase
 from django.urls import reverse
 
+from apps.common.constants import CLOSED_STAGES, OPPORTUNITY_STAGE_CHOICES
 from apps.observations.models import VesselObservation
 from apps.observations.serializers import VesselObservationSerializer
+from apps.opportunities.models import Opportunity
+from apps.ports.models import Port
 from apps.vessels.models import Vessel
 from apps.vessels.serializers import VesselSerializer
 
@@ -33,7 +40,7 @@ User = get_user_model()
 
 
 class TestWebFoundations(TestCase):
-    """Test suite for Frontend F0-F4 web views, security, access control, and contracts."""
+    """Test suite for Frontend F0-F5 web views, security, access control, and contracts."""
 
     def setUp(self):
         self.client = Client()
@@ -84,9 +91,29 @@ class TestWebFoundations(TestCase):
             last_renewal_survey="2023-05-12",
         )
 
+        # Test port & opportunity
+        self.port = Port.objects.create(
+            name="Singapore",
+            un_locode="SGSIN",
+            latitude=1.290270,
+            longitude=103.851959,
+            anchorage_latitude=1.250000,
+            anchorage_longitude=103.850000,
+            geofence_radius_km=30.0,
+        )
+        self.opportunity = Opportunity.objects.create(
+            vessel=self.vessel,
+            port=self.port,
+            stage="detected",
+            score=85,
+            zone="24h",
+            is_inbound=True,
+            lead_reason="Vessel inbound with high hull fouling probability.",
+        )
+
     # 1. Anonymous GET / redirects to /login/?next=/
     def test_anonymous_get_home_redirects_to_login(self):
-        paths = ["/", f"/vessels/{self.vessel.id}/", "/leads/1/"]
+        paths = ["/", f"/vessels/{self.vessel.id}/", f"/leads/{self.opportunity.id}/"]
         for path in paths:
             response = self.client.get(path)
             self.assertEqual(response.status_code, 302, f"Failed for {path}")
@@ -110,7 +137,7 @@ class TestWebFoundations(TestCase):
 
     # 3. Access control: Admin & BD Manager get 200, user with no role gets 403 friendly page
     def test_role_access_and_no_access_page(self):
-        paths = ["/", f"/vessels/{self.vessel.id}/", "/leads/1/"]
+        paths = ["/", f"/vessels/{self.vessel.id}/", f"/leads/{self.opportunity.id}/"]
 
         # User with no role gets 403 on all pages
         self.client.login(username="plain_user", password="plainpassword123")
@@ -156,7 +183,7 @@ class TestWebFoundations(TestCase):
         self.client.logout()
 
     # 5. Vessel detail view: 200 with data-vessel-id, 404 for unknown ID, placeholder template gone
-    def test_vessel_detail_view_and_placeholders(self):
+    def test_vessel_detail_view(self):
         self.client.login(username="bd_user", password="bdpassword123")
 
         # Real vessel page
@@ -177,14 +204,91 @@ class TestWebFoundations(TestCase):
         old_template_path = os.path.join(templates_dir, "vessel_placeholder.html")
         self.assertFalse(os.path.exists(old_template_path), "vessel_placeholder.html should be removed")
 
-        # Lead placeholder still works
-        res_lead = self.client.get("/leads/42/")
+        self.client.logout()
+
+    # 6. Lead detail view: 200 with data-lead-id, 404 for unknown ID, placeholder template gone
+    def test_lead_detail_view(self):
+        self.client.login(username="bd_user", password="bdpassword123")
+
+        # Real lead page
+        res_lead = self.client.get(f"/leads/{self.opportunity.id}/")
         self.assertEqual(res_lead.status_code, 200)
-        self.assertContains(res_lead, "This page arrives in phase F5")
+        self.assertContains(res_lead, f'data-lead-id="{self.opportunity.id}"')
+        self.assertContains(res_lead, "EVER GIVEN")
+        self.assertContains(res_lead, "lead.js")
+        self.assertContains(res_lead, "lead-logic.js")
+        self.assertContains(res_lead, "stages.js")
+        self.assertContains(res_lead, "lead.css")
+
+        # Unknown lead returns 404
+        res_404 = self.client.get("/leads/999999/")
+        self.assertEqual(res_404.status_code, 404)
+
+        # Placeholder template must be deleted
+        templates_dir = os.path.join(settings.BASE_DIR, "apps", "web", "templates", "web")
+        old_template_path = os.path.join(templates_dir, "lead_placeholder.html")
+        self.assertFalse(os.path.exists(old_template_path), "lead_placeholder.html should be removed")
 
         self.client.logout()
 
-    # 6. GET /logout/ is not allowed (405); POST /logout/ logs out and redirects to /login/
+    # 7. Shared stage definitions consistency: stages.js matches Django constants
+    def test_stages_js_consistency_with_django_constants(self):
+        stages_path = os.path.join(
+            settings.BASE_DIR, "apps", "web", "static", "web", "js", "stages.js"
+        )
+        self.assertTrue(os.path.exists(stages_path), "stages.js does not exist")
+
+        with open(stages_path, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        # Extract values and labels from STAGES array
+        stage_matches = re.findall(
+            r'\{\s*value:\s*"([^"]+)",\s*label:\s*"([^"]+)"\s*\}', content
+        )
+        js_stages = [(m[0], m[1]) for m in stage_matches]
+
+        # Must match OPPORTUNITY_STAGE_CHOICES exactly in order and text
+        self.assertEqual(
+            js_stages,
+            list(OPPORTUNITY_STAGE_CHOICES),
+            "stages.js STAGES does not match Django OPPORTUNITY_STAGE_CHOICES",
+        )
+
+        # Extract CLOSED_STAGE_VALUES
+        closed_match = re.search(r"export const CLOSED_STAGE_VALUES\s*=\s*\[([^\]]+)\]", content)
+        self.assertIsNotNone(closed_match, "CLOSED_STAGE_VALUES not found in stages.js")
+        raw_values = [v.strip().strip('"').strip("'") for v in closed_match.group(1).split(",")]
+        js_closed_set = {v for v in raw_values if v}
+
+        self.assertEqual(
+            js_closed_set,
+            set(CLOSED_STAGES),
+            "stages.js CLOSED_STAGE_VALUES does not match Django CLOSED_STAGES",
+        )
+
+    # 8. Lead page safety: no email/mailto, no outreach controls or send triggers
+    def test_lead_page_safety_and_no_outreach_controls(self):
+        templates_dir = os.path.join(settings.BASE_DIR, "apps", "web", "templates", "web")
+        lead_html_path = os.path.join(templates_dir, "lead.html")
+        with open(lead_html_path, "r", encoding="utf-8") as f:
+            html_content = f.read().lower()
+
+        js_dir = os.path.join(settings.BASE_DIR, "apps", "web", "static", "web", "js")
+        lead_js_path = os.path.join(js_dir, "lead.js")
+        with open(lead_js_path, "r", encoding="utf-8") as f:
+            js_content = f.read().lower()
+
+        # Neither HTML nor JS should contain mailto:
+        self.assertNotIn("mailto:", html_content, "mailto: found in lead.html")
+        self.assertNotIn("mailto:", js_content, "mailto: found in lead.js")
+
+        # No outreach / send buttons or triggers
+        self.assertNotIn(">send<", html_content, "'send' button text found in lead.html")
+        self.assertNotIn("send email", html_content, "'send email' text found in lead.html")
+        self.assertNotIn("send message", html_content, "'send message' text found in lead.html")
+        self.assertNotIn("outreach", html_content, "outreach control found in lead.html")
+
+    # 9. GET /logout/ is not allowed (405); POST /logout/ logs out and redirects to /login/
     def test_logout_behavior(self):
         self.client.login(username="bd_user", password="bdpassword123")
 
@@ -198,7 +302,7 @@ class TestWebFoundations(TestCase):
         home_after_logout = self.client.get("/")
         self.assertEqual(home_after_logout.status_code, 302)
 
-    # 7. Admin nav link present for staff user, absent for non-staff
+    # 10. Admin nav link present for staff user, absent for non-staff
     def test_admin_nav_link_visibility(self):
         self.client.login(username="admin_user", password="adminpassword123")
         res_staff = self.client.get("/")
@@ -210,7 +314,7 @@ class TestWebFoundations(TestCase):
         self.assertNotContains(res_non_staff, '<a href="/admin/" class="nav-link">Admin</a>')
         self.client.logout()
 
-    # 8. Home page and Vessel detail page reference static files and finders find them on disk
+    # 11. Home page, Vessel page, and Lead page reference static files and finders find them on disk
     def test_static_files_referenced_and_exist(self):
         self.client.login(username="admin_user", password="adminpassword123")
         res_home = self.client.get("/")
@@ -219,22 +323,31 @@ class TestWebFoundations(TestCase):
         res_vessel = self.client.get(f"/vessels/{self.vessel.id}/")
         content_vessel = res_vessel.content.decode("utf-8")
 
+        res_lead = self.client.get(f"/leads/{self.opportunity.id}/")
+        content_lead = res_lead.content.decode("utf-8")
+
+        all_rendered_content = content_home + content_vessel + content_lead
+
         expected_statics = [
             "web/css/tokens.css",
             "web/css/base.css",
             "web/css/components.css",
             "web/css/board.css",
+            "web/js/stages.js",
             "web/js/board-logic.js",
             "web/js/board.js",
             "web/css/vessel.css",
             "web/js/vessel-logic.js",
             "web/js/vessel.js",
+            "web/css/lead.css",
+            "web/js/lead-logic.js",
+            "web/js/lead.js",
         ]
 
         for rel_path in expected_statics:
             self.assertTrue(
-                rel_path in content_home or rel_path in content_vessel,
-                f"Static reference '{rel_path}' missing from templates"
+                rel_path in all_rendered_content,
+                f"Static reference '{rel_path}' missing from templates",
             )
             found_path = finders.find(rel_path)
             self.assertIsNotNone(found_path, f"Static file '{rel_path}' not found by finders")
@@ -242,7 +355,7 @@ class TestWebFoundations(TestCase):
 
         self.client.logout()
 
-    # 9. No template contains inline <script> body or style= attribute
+    # 12. No template contains inline <script> body or style= attribute
     def test_no_inline_scripts_or_styles_in_templates(self):
         templates_dir = os.path.join(settings.BASE_DIR, "apps", "web", "templates", "web")
         template_files = [f for f in os.listdir(templates_dir) if f.endswith(".html")]
@@ -262,11 +375,11 @@ class TestWebFoundations(TestCase):
                 if idx == -1:
                     break
                 end = lower.find(">", idx)
-                script_tag = lower[idx:end + 1]
+                script_tag = lower[idx : end + 1]
                 self.assertIn("src=", script_tag, f"Inline script tag without src= found in {filename}")
                 start = end + 1
 
-    # 10. No JavaScript file in static/web/js/ contains innerHTML, outerHTML, document.write, or eval(
+    # 13. No JavaScript file in static/web/js/ contains innerHTML, outerHTML, document.write, or eval(
     def test_no_unsafe_dom_sinks_in_js(self):
         js_dir = os.path.join(settings.BASE_DIR, "apps", "web", "static", "web", "js")
         js_files = [f for f in os.listdir(js_dir) if f.endswith(".js") or f.endswith(".mjs")]
@@ -282,7 +395,7 @@ class TestWebFoundations(TestCase):
             for sink in forbidden_sinks:
                 self.assertNotIn(sink, content, f"Forbidden sink '{sink}' found in {filename}")
 
-    # 11. api.js is the only JS file containing fetch(
+    # 14. api.js is the only JS file containing fetch(
     def test_only_api_js_contains_fetch(self):
         js_dir = os.path.join(settings.BASE_DIR, "apps", "web", "static", "web", "js")
         js_files = [f for f in os.listdir(js_dir) if f.endswith(".js") or f.endswith(".mjs")]
@@ -298,7 +411,7 @@ class TestWebFoundations(TestCase):
             else:
                 self.assertNotIn("fetch(", content, f"Disallowed fetch() found in {filename}")
 
-    # 12. Run JavaScript pure functions unit tests using node --test (both board-logic and vessel-logic)
+    # 15. Run JavaScript pure functions unit tests using node --test (board-logic, vessel-logic, lead-logic)
     def test_node_unit_tests(self):
         node_bin = shutil.which("node")
         if not node_bin:
@@ -315,20 +428,22 @@ class TestWebFoundations(TestCase):
         )
         board_test = os.path.join(tests_dir, "board-logic.test.mjs")
         vessel_test = os.path.join(tests_dir, "vessel-logic.test.mjs")
+        lead_test = os.path.join(tests_dir, "lead-logic.test.mjs")
 
         self.assertTrue(os.path.exists(board_test), f"Test file {board_test} does not exist.")
         self.assertTrue(os.path.exists(vessel_test), f"Test file {vessel_test} does not exist.")
+        self.assertTrue(os.path.exists(lead_test), f"Test file {lead_test} does not exist.")
 
         result = subprocess.run(
-            [node_bin, "--test", board_test, vessel_test],
+            [node_bin, "--test", board_test, vessel_test, lead_test],
             capture_output=True,
             text=True,
         )
         if result.returncode != 0:
             self.fail(f"Node tests failed:\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}")
-        self.assertIn("pass 26", result.stdout)
+        self.assertIn("pass 36", result.stdout)
 
-    # 13. Vessel and Observation API contracts: serializer fields read-only and observations ordered newest first
+    # 16. Vessel and Observation API contracts: serializer fields read-only and observations ordered newest first
     def test_vessel_and_observation_api_contracts(self):
         # Vessel serializer fields
         v_serializer = VesselSerializer(self.vessel)
