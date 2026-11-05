@@ -1,0 +1,88 @@
+{% extends "web/base.html" %}
+{% load static %}
+
+{% block title %}{{ vessel.name }} — Vessel Intelligence{% endblock title %}
+
+{% block main_attrs %} data-vessel-id="{{ vessel.id }}"{% endblock main_attrs %}
+
+{% block styles %}
+<link rel="stylesheet" href="{% static 'web/css/vessel.css' %}">
+{% endblock styles %}
+
+{% block content %}
+<div class="vessel-page-container">
+    <!-- Card 1: Header -->
+    <header class="vessel-header" id="card-header">
+        <div class="vessel-header-top">
+            <a href="/" id="back-to-board-link" class="back-link">&larr; Back to lead board</a>
+            <div id="header-badge-container"></div>
+        </div>
+        <div class="vessel-header-main">
+            <h1 id="vessel-name" class="vessel-title">{{ vessel.name }}</h1>
+            <div class="vessel-subtitle" id="vessel-subtitle">
+                <span class="sub-item">IMO: <strong id="header-imo">{{ vessel.imo|default:"—" }}</strong></span>
+                <span class="sub-item">MMSI: <strong id="header-mmsi">{{ vessel.mmsi|default:"—" }}</strong></span>
+                <span class="sub-item">Type: <strong id="header-type">{{ vessel.vessel_type|default:"—" }}</strong></span>
+                <span class="sub-item">Flag: <strong id="header-flag">{{ vessel.flag|default:"—" }}</strong></span>
+            </div>
+        </div>
+    </header>
+
+    <div class="vessel-grid">
+        <!-- Card 2: Particulars -->
+        <section class="vessel-card" id="card-particulars" aria-labelledby="heading-particulars">
+            <div class="card-header-row">
+                <h2 id="heading-particulars" class="card-title">Particulars</h2>
+            </div>
+            <div class="card-body" id="body-particulars">
+                <div class="loading-state">Loading particulars...</div>
+            </div>
+        </section>
+
+        <!-- Card 3: Latest position and voyage -->
+        <section class="vessel-card" id="card-position" aria-labelledby="heading-position">
+            <div class="card-header-row">
+                <h2 id="heading-position" class="card-title">Latest Position &amp; Voyage</h2>
+            </div>
+            <div class="card-body" id="body-position">
+                <div class="loading-state">Loading latest position...</div>
+            </div>
+        </section>
+
+        <!-- Card 4: Opportunities -->
+        <section class="vessel-card card-full-width" id="card-opportunities" aria-labelledby="heading-opportunities">
+            <div class="card-header-row">
+                <h2 id="heading-opportunities" class="card-title">Opportunities</h2>
+            </div>
+            <div class="card-body" id="body-opportunities">
+                <div class="loading-state">Loading opportunities...</div>
+            </div>
+        </section>
+
+        <!-- Card 5: Owners and managers -->
+        <section class="vessel-card card-full-width" id="card-relationships" aria-labelledby="heading-relationships">
+            <div class="card-header-row">
+                <h2 id="heading-relationships" class="card-title">Owners &amp; Managers</h2>
+            </div>
+            <div class="card-body" id="body-relationships">
+                <div class="loading-state">Loading owners &amp; managers...</div>
+            </div>
+        </section>
+
+        <!-- Card 6: Position history -->
+        <section class="vessel-card card-full-width" id="card-history" aria-labelledby="heading-history">
+            <div class="card-header-row">
+                <h2 id="heading-history" class="card-title">Position History</h2>
+            </div>
+            <div class="card-body" id="body-history">
+                <div class="loading-state">Loading position history...</div>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock content %}
+
+{% block scripts %}
+<script type="module" src="{% static 'web/js/vessel-logic.js' %}"></script>
+<script type="module" src="{% static 'web/js/vessel.js' %}"></script>
+{% endblock scripts %}

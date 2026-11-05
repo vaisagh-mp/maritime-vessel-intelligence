@@ -348,6 +348,11 @@ function onFiltersChanged() {
     const newQuery = toQuery(currentFilters);
     const newPath = newQuery ? `${window.location.pathname}${newQuery}` : window.location.pathname;
     window.history.replaceState(null, "", newPath);
+    try {
+        sessionStorage.setItem("board_query", newQuery ? newQuery.substring(1) : "");
+    } catch {
+        // Ignore storage access errors
+    }
     refreshAllColumns();
 }
 
@@ -424,6 +429,12 @@ function bindFilterEvents() {
 
 // Initialise board
 document.addEventListener("DOMContentLoaded", async () => {
+    try {
+        const initQuery = window.location.search;
+        sessionStorage.setItem("board_query", initQuery ? initQuery.substring(1) : "");
+    } catch {
+        // Ignore storage access errors
+    }
     syncFormControls();
     bindFilterEvents();
     await populatePortsDropdown();

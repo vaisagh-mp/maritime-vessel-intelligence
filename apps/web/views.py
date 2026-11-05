@@ -1,8 +1,9 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import render
-from django.views.generic import TemplateView
+from django.shortcuts import get_object_or_404, render
+from django.views.generic import TemplateView, View
 
 from apps.common.permissions import is_admin_or_bd_manager
+from apps.vessels.models import Vessel
 
 
 class RoleRequiredMixin(LoginRequiredMixin):
@@ -25,10 +26,12 @@ class HomeView(RoleRequiredMixin, TemplateView):
     template_name = "web/home.html"
 
 
-class VesselPlaceholderView(RoleRequiredMixin, TemplateView):
-    """Placeholder vessel detail page."""
+class VesselDetailView(RoleRequiredMixin, View):
+    """Vessel detail view, protected by login and role."""
 
-    template_name = "web/vessel_placeholder.html"
+    def get(self, request, pk):
+        vessel = get_object_or_404(Vessel, pk=pk)
+        return render(request, "web/vessel.html", {"vessel": vessel})
 
 
 class LeadPlaceholderView(RoleRequiredMixin, TemplateView):

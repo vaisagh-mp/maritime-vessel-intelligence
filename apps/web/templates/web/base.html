@@ -39,7 +39,7 @@
     </header>
     {% endblock nav %}
 
-    <main id="main" class="main-content">
+    <main id="main" class="main-content"{% block main_attrs %}{% endblock main_attrs %}>
         {% block content %}{% endblock content %}
     </main>
 
