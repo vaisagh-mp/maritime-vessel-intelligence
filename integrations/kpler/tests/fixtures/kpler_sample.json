@@ -1,0 +1,287 @@
+{
+  "data": {
+    "vessels": {
+      "nodes": [
+        {
+          "identifier": {
+            "imo": "9146297",
+            "mmsi": "240123000",
+            "callSign": "SXYZ",
+            "shipId": "1001"
+          },
+          "particulars": {
+            "general": {
+              "name": "PACIFIC EXPLORER",
+              "commercialFleet": "Dry Bulk",
+              "vesselType": "Bulk Carrier",
+              "vesselSubtype": "Handymax",
+              "serviceStatus": "In Service",
+              "flag": "Greece",
+              "vesselSizeSegment": "Handymax",
+              "keelLaidDate": "1997-03-01"
+            },
+            "hull": {
+              "yearOfBuild": 1998
+            },
+            "dimension": {
+              "lengthOverall": 189.9,
+              "breadthExtreme": 32.2,
+              "draught": 12.5
+            },
+            "tonnage": {
+              "grossTonnage": 28000,
+              "deadweightTonnage": 48000
+            },
+            "surveyMaintenance": {
+              "lastDryDock": "2023-05-15",
+              "lastRenewalSurvey": "2023-05-20"
+            }
+          },
+          "management": {
+            "registeredOwner": {
+              "current": {
+                "name": "Pacific Maritime Ltd",
+                "country": "Marshall Islands",
+                "address": "Trust Company Complex, Ajeltake Island, Majuro",
+                "website": "https://pacificmaritime.com",
+                "email": "owner@pacificmaritime.com",
+                "startDate": "2015-06-01",
+                "endDate": null
+              }
+            },
+            "beneficialOwner": {
+              "current": {
+                "name": "Pacific Holdings Corp",
+                "country": "Greece",
+                "address": "Akti Miaouli 45, Piraeus",
+                "website": "https://pacificholdings.gr",
+                "email": "info@pacificholdings.gr",
+                "startDate": "2015-06-01",
+                "endDate": null
+              }
+            },
+            "commercialManager": {
+              "current": {
+                "name": "Global Chartering Inc",
+                "country": "Singapore",
+                "address": "10 Collyer Quay, Ocean Financial Centre",
+                "website": "https://globalchartering.sg",
+                "email": "chartering@globalchartering.sg",
+                "startDate": "2018-01-10",
+                "endDate": null
+              }
+            },
+            "operator": {
+              "current": {
+                "name": "Pacific Operations SA",
+                "country": "Greece",
+                "address": "Akti Miaouli 45, Piraeus",
+                "website": "https://pacificops.gr",
+                "email": "ops@pacificops.gr",
+                "startDate": "2016-03-01",
+                "endDate": null
+              }
+            },
+            "technicalManager": {
+              "current": {
+                "name": "Pacific Shipmanagement Ltd",
+                "country": "Cyprus",
+                "address": "Omonia Ave 12, Limassol",
+                "website": "https://pacificshipmanagement.com",
+                "email": "tech@pacificshipmanagement.com",
+                "startDate": "2016-01-01",
+                "endDate": null
+              }
+            },
+            "ismManager": {
+              "current": {
+                "name": "Pacific Shipmanagement Ltd",
+                "country": "Cyprus",
+                "address": "Omonia Ave 12, Limassol",
+                "website": "https://pacificshipmanagement.com",
+                "email": "ism@pacificshipmanagement.com",
+                "startDate": "2016-01-01",
+                "endDate": null
+              }
+            }
+          }
+        },
+        {
+          "identifier": {
+            "imo": "9308766",
+            "mmsi": "257123000",
+            "callSign": "LAFG8",
+            "shipId": "1002"
+          },
+          "particulars": {
+            "general": {
+              "name": "NORDIC STAR",
+              "commercialFleet": "Tanker",
+              "vesselType": "Crude Oil Tanker",
+              "vesselSubtype": "Aframax",
+              "serviceStatus": "In Service",
+              "flag": "Norway",
+              "vesselSizeSegment": "Aframax",
+              "keelLaidDate": "2004-06-01"
+            },
+            "hull": {
+              "yearOfBuild": 2005
+            },
+            "dimension": {
+              "lengthOverall": 244.0,
+              "breadthExtreme": 42.0,
+              "draught": 14.8
+            },
+            "tonnage": {
+              "grossTonnage": 58000,
+              "deadweightTonnage": 105000
+            },
+            "surveyMaintenance": {
+              "lastDryDock": "2022-09-10",
+              "lastRenewalSurvey": "2022-09-15"
+            }
+          },
+          "management": {
+            "registeredOwner": {
+              "current": {
+                "name": "Nordic Tankers KS",
+                "country": "Norway",
+                "address": "Strandgaten 10, Bergen",
+                "website": null,
+                "email": null,
+                "startDate": "2019-04-01",
+                "endDate": null
+              }
+            },
+            "beneficialOwner": null,
+            "commercialManager": null,
+            "operator": null,
+            "technicalManager": {
+              "current": {
+                "name": "Bergen Marine AS",
+                "country": "Norway",
+                "address": "Strandgaten 10, Bergen",
+                "website": null,
+                "email": null,
+                "startDate": "2019-04-01",
+                "endDate": null
+              }
+            },
+            "ismManager": null
+          }
+        },
+        {
+          "identifier": {
+            "imo": "9456789",
+            "mmsi": "356123000",
+            "callSign": "3FFG9",
+            "shipId": "1003"
+          },
+          "particulars": {
+            "general": {
+              "name": "EASTERN PHOENIX",
+              "commercialFleet": "Container",
+              "vesselType": "Container Ship",
+              "vesselSubtype": "Panamax",
+              "serviceStatus": "In Service",
+              "flag": "Panama",
+              "vesselSizeSegment": "Panamax",
+              "keelLaidDate": "2009-02-01"
+            },
+            "hull": {
+              "yearOfBuild": 2010
+            },
+            "dimension": {
+              "lengthOverall": 260.0,
+              "breadthExtreme": 32.2,
+              "draught": 12.0
+            },
+            "tonnage": {
+              "grossTonnage": 40000,
+              "deadweightTonnage": 52000
+            },
+            "surveyMaintenance": {
+              "lastDryDock": null,
+              "lastRenewalSurvey": null
+            }
+          },
+          "management": {
+            "registeredOwner": {
+              "current": {
+                "name": "Phoenix Shipping Lines Co",
+                "country": "Panama",
+                "address": "Oceania Business Plaza, Panama City",
+                "website": "https://phoenixshipping.pa",
+                "email": "REGISTRY@PHOENIXSHIPPING.PA",
+                "startDate": "2020-01-01",
+                "endDate": null
+              }
+            },
+            "beneficialOwner": {
+              "current": {
+                "name": "Eastern Orient Holding Ltd",
+                "country": "Hong Kong",
+                "address": "Two IFC, Central",
+                "website": null,
+                "email": null,
+                "startDate": "2020-01-01",
+                "endDate": null
+              }
+            },
+            "commercialManager": null,
+            "operator": null,
+            "technicalManager": null,
+            "ismManager": null
+          }
+        },
+        {
+          "identifier": {
+            "imo": "9876543",
+            "mmsi": "636123000",
+            "callSign": null,
+            "shipId": null
+          },
+          "particulars": {
+            "general": {
+              "name": "SEA BREEZE",
+              "commercialFleet": null,
+              "vesselType": "Chemical Tanker",
+              "vesselSubtype": null,
+              "serviceStatus": "In Service",
+              "flag": "Liberia",
+              "vesselSizeSegment": null,
+              "keelLaidDate": null
+            },
+            "hull": {
+              "yearOfBuild": 2018
+            },
+            "dimension": {
+              "lengthOverall": 145.0,
+              "breadthExtreme": 23.0,
+              "draught": 8.5
+            },
+            "tonnage": {
+              "grossTonnage": 12000,
+              "deadweightTonnage": 19000
+            },
+            "surveyMaintenance": {
+              "lastDryDock": null,
+              "lastRenewalSurvey": null
+            }
+          },
+          "management": {
+            "registeredOwner": null,
+            "beneficialOwner": null,
+            "commercialManager": null,
+            "operator": null,
+            "technicalManager": null,
+            "ismManager": {
+              "current": null
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+
