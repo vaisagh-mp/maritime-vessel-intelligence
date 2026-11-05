@@ -6,7 +6,7 @@
  */
 
 import { api, ApiError } from "./api.js";
-import { el } from "./ui.js";
+import { el, renderError } from "./ui.js";
 import {
     navStatusLabel,
     portAreaLabel,
@@ -57,32 +57,7 @@ function setLoading(container, message) {
     container.appendChild(el("div", { class: "loading-state" }, message));
 }
 
-/**
- * Helper to display error message with retry button inside a card.
- */
-function setError(container, errorText, onRetry) {
-    while (container.firstChild) {
-        container.removeChild(container.firstChild);
-    }
-    const errorEl = el(
-        "div",
-        { class: "error-state", role: "alert" },
-        el("span", { class: "error-text" }, errorText || "Failed to load data."),
-        el(
-            "button",
-            {
-                type: "button",
-                class: "btn-retry",
-                onClick: (e) => {
-                    e.preventDefault();
-                    onRetry();
-                },
-            },
-            "Retry"
-        )
-    );
-    container.appendChild(errorEl);
-}
+
 
 /**
  * Helper to display empty state.
@@ -148,7 +123,7 @@ async function loadVesselData(vesselId) {
 
         bodyParticulars.appendChild(dl);
     } catch (err) {
-        setError(bodyParticulars, `Error loading particulars: ${err.message}`, () => loadVesselData(vesselId));
+        renderError(bodyParticulars, `Error loading particulars: ${err.message}`, () => loadVesselData(vesselId));
     }
 }
 
@@ -205,10 +180,10 @@ async function loadObservationsData(vesselId) {
         }
     } catch (err) {
         if (bodyPosition) {
-            setError(bodyPosition, `Error loading position: ${err.message}`, () => loadObservationsData(vesselId));
+            renderError(bodyPosition, `Error loading position: ${err.message}`, () => loadObservationsData(vesselId));
         }
         if (bodyHistory) {
-            setError(bodyHistory, `Error loading history: ${err.message}`, () => loadObservationsData(vesselId));
+            renderError(bodyHistory, `Error loading history: ${err.message}`, () => loadObservationsData(vesselId));
         }
     }
 }
@@ -444,7 +419,7 @@ async function loadOpportunitiesData(vesselId) {
 
         renderOpportunitiesTable(bodyOpps, sortedOpps);
     } catch (err) {
-        setError(bodyOpps, `Error loading opportunities: ${err.message}`, () => loadOpportunitiesData(vesselId));
+        renderError(bodyOpps, `Error loading opportunities: ${err.message}`, () => loadOpportunitiesData(vesselId));
     }
 }
 
@@ -594,7 +569,7 @@ async function loadRelationshipsData(vesselId) {
 
         bodyRels.appendChild(listWrap);
     } catch (err) {
-        setError(bodyRels, `Error loading contacts: ${err.message}`, () => loadRelationshipsData(vesselId));
+        renderError(bodyRels, `Error loading contacts: ${err.message}`, () => loadRelationshipsData(vesselId));
     }
 }
 

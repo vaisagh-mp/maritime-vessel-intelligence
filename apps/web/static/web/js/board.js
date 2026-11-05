@@ -18,7 +18,7 @@ import {
     VALID_STAGES,
     ZONES,
 } from "./board-logic.js";
-import { bandBadge, el, formatNumber, formatUtc } from "./ui.js";
+import { bandBadge, el, errorState, formatNumber, formatUtc } from "./ui.js";
 
 const EM_DASH = "\u2014";
 
@@ -195,22 +195,7 @@ function renderColumn(zoneId) {
     }
 
     if (state.error && state.items.length === 0) {
-        const retryBtn = el(
-            "button",
-            {
-                type: "button",
-                class: "btn btn-secondary",
-                onClick: () => loadColumn(zoneId),
-            },
-            "Retry"
-        );
-        const errorState = el(
-            "div",
-            { class: "column-state column-error" },
-            el("p", {}, state.error),
-            retryBtn
-        );
-        cardsContainer.appendChild(errorState);
+        cardsContainer.appendChild(errorState(state.error, () => loadColumn(zoneId)));
         return;
     }
 

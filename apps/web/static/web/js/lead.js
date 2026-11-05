@@ -7,7 +7,7 @@
  */
 
 import { api, ApiError } from "./api.js";
-import { el, formatUtc, formatNumber, dash, bandBadge, toast } from "./ui.js";
+import { el, formatUtc, formatNumber, dash, bandBadge, toast, renderError } from "./ui.js";
 import { etaRelative, etaSourceLabel } from "./board-logic.js";
 import {
     stageOptions,
@@ -18,6 +18,7 @@ import {
     buildPatchBody,
     actorName,
     historyLabel,
+    canSubmitStage,
 } from "./lead-logic.js";
 import { STAGES } from "./stages.js";
 
@@ -27,6 +28,7 @@ let currentOpportunity = null;
 let notesNextUrl = null;
 let historyNextUrl = null;
 let pendingTransition = null;
+let isStageBusy = false;
 
 /**
  * Configure back link to preserve previous lead board filters if stored in sessionStorage.
@@ -227,19 +229,14 @@ function updateStageButtonState() {
     if (!select || !textarea || !updateBtn || !currentOpportunity) return;
 
     const selectedStage = select.value;
-    const stageChanged = selectedStage !== currentOpportunity.stage;
     const trimmedNote = textarea.value.trim();
-    const hasNote = trimmedNote.length > 0;
+    const canSubmit = canSubmitStage(currentOpportunity.stage, selectedStage, trimmedNote, isStageBusy);
 
-    if (!stageChanged && !hasNote) {
-        updateBtn.disabled = true;
-        if (sameHint) sameHint.classList.add("hidden");
-    } else if (!stageChanged && hasNote) {
-        updateBtn.disabled = true;
+    updateBtn.disabled = !canSubmit;
+
+    if (selectedStage === currentOpportunity.stage && trimmedNote.length > 0) {
         if (sameHint) sameHint.classList.remove("hidden");
     } else {
-        // stageChanged is true
-        updateBtn.disabled = false;
         if (sameHint) sameHint.classList.add("hidden");
     }
 }
@@ -330,12 +327,12 @@ function initStageForm() {
  */
 async function executeStagePatch(newStage, noteText) {
     const errorEl = document.getElementById("stage-error");
-    const updateBtn = document.getElementById("stage-update-btn");
     const textarea = document.getElementById("stage-note-input");
     const counter = document.getElementById("stage-note-counter");
 
     if (errorEl) errorEl.classList.add("hidden");
-    if (updateBtn) updateBtn.disabled = true;
+    isStageBusy = true;
+    updateStageButtonState();
 
     const body = buildPatchBody(currentOpportunity.stage, newStage, noteText);
 
@@ -357,13 +354,9 @@ async function executeStagePatch(newStage, noteText) {
             counter.textContent = noteCounterText(0, 2000);
         }
 
-        updateStageButtonState();
-
         // Refresh first page of notes and history
-        await Promise.all([
-            loadNotes(leadId, true),
-            loadHistory(leadId, true),
-        ]);
+        loadNotes(leadId, true).catch(() => {});
+        loadHistory(leadId, true).catch(() => {});
     } catch (err) {
         if (err.status === 409) {
             // Concurrency conflict safeguard
@@ -383,10 +376,8 @@ async function executeStagePatch(newStage, noteText) {
                 renderHeader(refreshed);
                 renderProgressStrip(refreshed.stage);
                 populateStageSelect(refreshed.stage);
-                await Promise.all([
-                    loadNotes(leadId, true),
-                    loadHistory(leadId, true),
-                ]);
+                loadNotes(leadId, true).catch(() => {});
+                loadHistory(leadId, true).catch(() => {});
             } catch {
                 // If refresh fails, keep current view
             }
@@ -401,6 +392,8 @@ async function executeStagePatch(newStage, noteText) {
                 errorEl.classList.remove("hidden");
             }
         }
+    } finally {
+        isStageBusy = false;
         updateStageButtonState();
     }
 }
@@ -473,12 +466,7 @@ async function loadNotes(id, reset = false) {
             }
         }
     } catch (err) {
-        if (reset) {
-            while (listContainer.firstChild) listContainer.removeChild(listContainer.firstChild);
-        }
-        listContainer.appendChild(
-            el("div", { class: "error-state" }, err.message || "Failed to load notes.")
-        );
+        renderError(listContainer, err.message || "Failed to load notes.", () => loadNotes(id, true));
     }
 }
 
@@ -625,12 +613,7 @@ async function loadHistory(id, reset = false) {
             }
         }
     } catch (err) {
-        if (reset) {
-            while (listContainer.firstChild) listContainer.removeChild(listContainer.firstChild);
-        }
-        listContainer.appendChild(
-            el("div", { class: "error-state" }, err.message || "Failed to load history.")
-        );
+        renderError(listContainer, err.message || "Failed to load history.", () => loadHistory(id, true));
     }
 }
 
@@ -690,14 +673,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     initStageForm();
     initNoteForm();
 
-    // Trigger 3 parallel requests via api.js
+    // 1. Fetch opportunity details
     try {
-        const [oppRes] = await Promise.all([
-            api.get(`/api/v1/opportunities/${leadId}/`),
-            loadNotes(leadId, true),
-            loadHistory(leadId, true),
-        ]);
-
+        const oppRes = await api.get(`/api/v1/opportunities/${leadId}/`);
         currentOpportunity = oppRes;
 
         // Render Card 1 (Header), Card 2 (Stage), and Card 5 (Vessel Summary)
@@ -707,11 +685,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         renderVesselSummary(oppRes.vessel_summary, oppRes.vessel);
         updateStageButtonState();
     } catch (err) {
-        const header = document.getElementById("card-header");
+        const header = document.getElementById("page-header");
         if (header) {
-            header.appendChild(
-                el("div", { class: "form-error", role: "alert" }, err.message || "Failed to load lead.")
-            );
+            renderError(header, err.message || "Failed to load lead.", () => window.location.reload());
         }
     }
+
+    // 2. Fetch notes and history in parallel (failures do not block header or pipeline)
+    loadNotes(leadId, true).catch(() => {});
+    loadHistory(leadId, true).catch(() => {});
 });
+

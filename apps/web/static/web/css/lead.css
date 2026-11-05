@@ -5,15 +5,6 @@
  * Responsive: 2 columns from 900px, 1 column below; no horizontal scrolling at 360px.
  */
 
-.lead-page-container {
-    max-width: var(--max-content-width);
-    margin: 0 auto;
-    padding: var(--space-16);
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-24);
-}
-
 /* 1. Header Card */
 .lead-header {
     background-color: var(--color-surface);
@@ -123,6 +114,7 @@
     display: grid;
     grid-template-columns: 1fr;
     gap: var(--space-24);
+    margin-top: var(--space-24);
 }
 
 @media (min-width: 900px) {
@@ -144,7 +136,7 @@
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     padding: var(--space-24);
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    box-shadow: var(--shadow-card);
 }
 
 .card-header-row {
@@ -204,7 +196,7 @@
 
 .progress-step.step-current {
     background-color: var(--color-accent);
-    color: #ffffff;
+    color: var(--color-step-current-text);
     border-color: var(--color-accent);
     box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-accent);
 }
@@ -281,7 +273,7 @@
 .form-textarea:focus {
     outline: none;
     border-color: var(--color-accent);
-    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2);
+    box-shadow: 0 0 0 3px var(--color-focus-ring);
 }
 
 .form-textarea {
@@ -319,7 +311,7 @@
 }
 
 .hidden {
-    display: none !important;
+    display: none;
 }
 
 /* Notes Section */
@@ -429,21 +421,6 @@
 }
 
 /* Empty, Loading, and Retry States */
-.empty-state {
-    padding: var(--space-24);
-    text-align: center;
-    color: var(--color-text-muted);
-    font-size: var(--font-sm);
-    font-style: italic;
-}
-
-.loading-state {
-    padding: var(--space-16);
-    text-align: center;
-    color: var(--color-text-muted);
-    font-size: var(--font-sm);
-}
-
 .pagination-container {
     display: flex;
     justify-content: center;
@@ -463,11 +440,11 @@
     padding: var(--space-24);
     max-width: 480px;
     width: 90%;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-dialog);
 }
 
 .stage-dialog::backdrop {
-    background-color: rgba(0, 0, 0, 0.6);
+    background-color: var(--dialog-backdrop);
     backdrop-filter: blur(2px);
 }
 
@@ -508,14 +485,3 @@
     margin-top: var(--space-8);
 }
 
-.btn-danger {
-    background-color: var(--color-danger);
-    color: #ffffff;
-    border-color: var(--color-danger);
-}
-
-.btn-danger:hover {
-    background-color: #991b1b;
-    border-color: #991b1b;
-    color: #ffffff;
-}
