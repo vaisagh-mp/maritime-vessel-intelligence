@@ -25,6 +25,7 @@ class Vessel(models.Model):
     vessel_size_segment = models.CharField(max_length=60, blank=True)
     last_dry_dock = models.DateField(null=True, blank=True)
     last_renewal_survey = models.DateField(null=True, blank=True)
+    ownership_checked_at = models.DateTimeField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
