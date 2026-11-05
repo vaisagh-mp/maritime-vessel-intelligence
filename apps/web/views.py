@@ -3,6 +3,7 @@ from django.shortcuts import get_object_or_404, render
 from django.views.generic import TemplateView, View
 
 from apps.common.permissions import is_admin_or_bd_manager
+from apps.opportunities.models import Opportunity
 from apps.vessels.models import Vessel
 
 
@@ -34,7 +35,11 @@ class VesselDetailView(RoleRequiredMixin, View):
         return render(request, "web/vessel.html", {"vessel": vessel})
 
 
-class LeadPlaceholderView(RoleRequiredMixin, TemplateView):
-    """Placeholder lead detail page."""
+class LeadDetailView(RoleRequiredMixin, View):
+    """Lead detail and pipeline view, protected by login and role."""
 
-    template_name = "web/lead_placeholder.html"
+    def get(self, request, pk):
+        opportunity = get_object_or_404(
+            Opportunity.objects.select_related("vessel", "port"), pk=pk
+        )
+        return render(request, "web/lead.html", {"opportunity": opportunity})
