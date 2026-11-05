@@ -19,14 +19,12 @@ export const ZONES = [
 ];
 
 /**
- * Parse a URL search string into a normalized filters object.
- * Invalid or unknown parameters are ignored.
- * @param {string} search - e.g. "?port=1&band=HOT&q=tanker&inbound=1"
- * @returns {Object} normalized filters
+ * Return a fresh default filters object.
+ * Single source of truth for default board filters.
+ * @returns {Object}
  */
-export function readFilters(search) {
-    const params = new URLSearchParams(search || "");
-    const filters = {
+export function defaultFilters() {
+    return {
         port: "",
         band: "",
         stage: "",
@@ -35,6 +33,48 @@ export function readFilters(search) {
         inbound: false,
         closed: false,
     };
+}
+
+/**
+ * Count how many filters differ from default settings.
+ * Counting rules:
+ * - sort counts as active only when different from "-score"
+ * - stage counts as active only when non-empty
+ * - search of only spaces is not active
+ * @param {Object} [filters]
+ * @returns {number}
+ */
+export function activeFilterCount(filters) {
+    if (!filters) return 0;
+    let count = 0;
+    if (filters.port && String(filters.port).trim() !== "") count += 1;
+    if (filters.band && String(filters.band).trim() !== "") count += 1;
+    if (filters.stage && String(filters.stage).trim() !== "") count += 1;
+    if (filters.q && String(filters.q).trim() !== "") count += 1;
+    if (filters.sort && filters.sort !== "-score") count += 1;
+    if (Boolean(filters.inbound)) count += 1;
+    if (Boolean(filters.closed)) count += 1;
+    return count;
+}
+
+/**
+ * Check if the filters match the default settings.
+ * @param {Object} [filters]
+ * @returns {boolean}
+ */
+export function isDefault(filters) {
+    return activeFilterCount(filters) === 0;
+}
+
+/**
+ * Parse a URL search string into a normalized filters object.
+ * Invalid or unknown parameters are ignored.
+ * @param {string} search - e.g. "?port=1&band=HOT&q=tanker&inbound=1"
+ * @returns {Object} normalized filters
+ */
+export function readFilters(search) {
+    const params = new URLSearchParams(search || "");
+    const filters = defaultFilters();
 
     const portVal = params.get("port");
     if (portVal && /^\d+$/.test(portVal.trim())) {

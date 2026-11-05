@@ -2,6 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+    defaultFilters,
+    activeFilterCount,
+    isDefault,
     readFilters,
     toQuery,
     apiQueryForZone,
@@ -165,4 +168,65 @@ test("summarise: computes total, hot, and inbound counts", () => {
 
     assert.deepEqual(summarise([]), { total: 0, hot: 0, inbound: 0 });
     assert.deepEqual(summarise(null), { total: 0, hot: 0, inbound: 0 });
+});
+
+test("defaultFilters: returns clean default filter object", () => {
+    const f = defaultFilters();
+    assert.deepEqual(f, {
+        port: "",
+        band: "",
+        stage: "",
+        q: "",
+        sort: "-score",
+        inbound: false,
+        closed: false,
+    });
+});
+
+test("activeFilterCount & isDefault: all defaults", () => {
+    const f = defaultFilters();
+    assert.equal(activeFilterCount(f), 0);
+    assert.equal(isDefault(f), true);
+    assert.equal(activeFilterCount(null), 0);
+    assert.equal(isDefault(null), true);
+    assert.equal(activeFilterCount(undefined), 0);
+    assert.equal(isDefault(undefined), true);
+});
+
+test("activeFilterCount & isDefault: single active filter variations", () => {
+    assert.equal(activeFilterCount({ ...defaultFilters(), port: "290" }), 1);
+    assert.equal(isDefault({ ...defaultFilters(), port: "290" }), false);
+
+    assert.equal(activeFilterCount({ ...defaultFilters(), band: "HOT" }), 1);
+    assert.equal(activeFilterCount({ ...defaultFilters(), stage: "contacted" }), 1);
+    assert.equal(activeFilterCount({ ...defaultFilters(), q: "tanker" }), 1);
+    assert.equal(activeFilterCount({ ...defaultFilters(), sort: "eta" }), 1);
+    assert.equal(activeFilterCount({ ...defaultFilters(), inbound: true }), 1);
+    assert.equal(activeFilterCount({ ...defaultFilters(), closed: true }), 1);
+});
+
+test("activeFilterCount & isDefault: several changes and counting rules", () => {
+    // several active
+    const multi = {
+        ...defaultFilters(),
+        port: "290",
+        band: "HOT",
+        sort: "eta",
+        inbound: true,
+    };
+    assert.equal(activeFilterCount(multi), 4);
+    assert.equal(isDefault(multi), false);
+
+    // sort at default "-score" does not count as active
+    assert.equal(activeFilterCount({ ...defaultFilters(), sort: "-score" }), 0);
+
+    // stage at default "" does not count as active
+    assert.equal(activeFilterCount({ ...defaultFilters(), stage: "" }), 0);
+
+    // search with only spaces is not active
+    assert.equal(activeFilterCount({ ...defaultFilters(), q: "   " }), 0);
+    assert.equal(isDefault({ ...defaultFilters(), q: "   " }), true);
+
+    // search with actual text is active
+    assert.equal(activeFilterCount({ ...defaultFilters(), q: "  tanker  " }), 1);
 });

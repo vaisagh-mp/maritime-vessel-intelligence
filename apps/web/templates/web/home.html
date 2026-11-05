@@ -70,18 +70,21 @@
 
         <div class="filter-row">
             <div class="filter-checkboxes">
-                <label class="filter-checkbox">
-                    <input type="checkbox" id="filter-inbound" name="inbound">
+                <label for="filter-inbound" class="filter-checkbox">
+                    <input type="checkbox" id="filter-inbound" name="inbound" aria-label="Inbound only">
                     <span>Inbound only</span>
                 </label>
-                <label class="filter-checkbox">
-                    <input type="checkbox" id="filter-closed" name="closed">
+                <label for="filter-closed" class="filter-checkbox">
+                    <input type="checkbox" id="filter-closed" name="closed" aria-label="Include closed leads">
                     <span>Include closed leads</span>
                 </label>
             </div>
 
             <div class="filter-actions">
                 <button type="button" id="btn-refresh" class="btn btn-secondary">Refresh</button>
+                <button type="button" id="reset-filters" class="btn btn-secondary">Reset filters</button>
+                <span id="active-filters-count" class="active-filters-count" aria-live="polite"></span>
+                <span id="filter-status" class="visually-hidden" role="status" aria-live="polite"></span>
                 <span id="updated-time" class="updated-time">Updated --:-- UTC</span>
                 <a id="link-export" class="btn btn-secondary export-link" href="/api/v1/opportunities/export/">Export CSV</a>
             </div>
@@ -138,6 +141,6 @@
 {% endblock content %}
 
 {% block scripts %}
-<script type="module" src="{% static 'web/js/board-logic.js' %}?v={{ static_version }}"></script>
-<script type="module" src="{% static 'web/js/board.js' %}?v={{ static_version }}"></script>
+<script type="module" src="{% static 'web/js/board-logic.js' %}{% if static_version %}?v={{ static_version }}{% endif %}"></script>
+<script type="module" src="{% static 'web/js/board.js' %}{% if static_version %}?v={{ static_version }}{% endif %}"></script>
 {% endblock scripts %}

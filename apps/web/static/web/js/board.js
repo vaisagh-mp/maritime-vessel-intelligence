@@ -6,10 +6,13 @@
 
 import { api } from "./api.js";
 import {
+    activeFilterCount,
     apiQueryForZone,
+    defaultFilters,
     etaRelative,
     etaSourceLabel,
     exportQuery,
+    isDefault,
     readFilters,
     STAGE_LABELS,
     summarise,
@@ -189,7 +192,7 @@ function renderColumn(zoneId) {
     }
 
     if (state.loading && state.items.length === 0) {
-        const loadingState = el("div", { class: "column-state" }, "Loading leads...");
+        const loadingState = el("div", { class: "column-state", role: "status" }, "Loading leads...");
         cardsContainer.appendChild(loadingState);
         return;
     }
@@ -202,7 +205,7 @@ function renderColumn(zoneId) {
     if (state.items.length === 0) {
         const emptyState = el(
             "div",
-            { class: "column-state" },
+            { class: "column-state", role: "status" },
             "No leads in this zone for these filters"
         );
         cardsContainer.appendChild(emptyState);
@@ -226,6 +229,11 @@ function renderColumn(zoneId) {
             state.loadingMore ? "Loading..." : "Load more"
         );
         loadMoreContainer.appendChild(loadMoreBtn);
+        if (state.lastLoadedAnnouncement) {
+            const statusEl = el("span", { class: "visually-hidden", role: "status", "aria-live": "polite" }, state.lastLoadedAnnouncement);
+            loadMoreContainer.appendChild(statusEl);
+            state.lastLoadedAnnouncement = null;
+        }
     }
 }
 
@@ -267,8 +275,10 @@ async function loadMoreColumn(zoneId) {
         const relativeUrl = `${nextUrlObj.pathname}${nextUrlObj.search}`;
         const data = await api.get(relativeUrl);
 
+        const added = (data.results || []).length;
         state.items = [...state.items, ...(data.results || [])];
         state.nextUrl = data.next || null;
+        state.lastLoadedAnnouncement = `${added} more leads loaded`;
     } catch (err) {
         state.error = err.message || "Failed to load more leads";
     } finally {
@@ -329,6 +339,43 @@ function syncFormControls() {
     if (closedCheck) closedCheck.checked = currentFilters.closed;
 }
 
+function updateResetButton() {
+    const resetBtn = document.getElementById("reset-filters");
+    const countEl = document.getElementById("active-filters-count");
+    const count = activeFilterCount(currentFilters);
+    const isDef = count === 0;
+
+    if (resetBtn) {
+        resetBtn.disabled = isDef;
+    }
+    if (countEl) {
+        countEl.textContent = isDef ? "" : `${count} filter${count === 1 ? "" : "s"} active`;
+    }
+}
+
+function handleResetFilters() {
+    currentFilters = defaultFilters();
+    window.history.replaceState(null, "", window.location.pathname);
+    try {
+        sessionStorage.removeItem("board_query");
+    } catch {
+        // Ignore storage access errors
+    }
+    syncFormControls();
+    updateExportLink();
+    updateResetButton();
+    refreshAllColumns();
+
+    const qInput = document.getElementById("filter-q");
+    if (qInput) {
+        qInput.focus();
+    }
+    const statusEl = document.getElementById("filter-status");
+    if (statusEl) {
+        statusEl.textContent = "Filters reset";
+    }
+}
+
 function onFiltersChanged() {
     const newQuery = toQuery(currentFilters);
     const newPath = newQuery ? `${window.location.pathname}${newQuery}` : window.location.pathname;
@@ -338,6 +385,7 @@ function onFiltersChanged() {
     } catch {
         // Ignore storage access errors
     }
+    updateResetButton();
     refreshAllColumns();
 }
 
@@ -410,6 +458,11 @@ function bindFilterEvents() {
             refreshAllColumns();
         });
     }
+
+    const resetBtn = document.getElementById("reset-filters");
+    if (resetBtn) {
+        resetBtn.addEventListener("click", handleResetFilters);
+    }
 }
 
 // Initialise board safely when DOM is ready
@@ -423,6 +476,7 @@ onReady(async () => {
             // Ignore storage access errors
         }
         syncFormControls();
+        updateResetButton();
         bindFilterEvents();
         await populatePortsDropdown();
         refreshAllColumns();
