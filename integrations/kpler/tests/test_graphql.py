@@ -187,3 +187,86 @@ class GraphQLClientTests(SimpleTestCase):
         self.assertIn("technicalManager", query)
         self.assertIn("beneficialOwner", query)
         self.assertIn("commercialOperator", query)
+
+    @patch("integrations.kpler.graphql.requests.post")
+    def test_fetch_vessels_batch_size_capped_at_20(self, mock_post):
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {"data": {"vessels": {"nodes": []}}}
+        mock_post.return_value = mock_resp
+
+        from integrations.kpler.graphql import fetch_vessels
+        # 25 IMOs should chunk into 2 requests (20 and 5)
+        imos = [f"90000{i:02d}" for i in range(25)]
+        fetch_vessels(imos)
+
+        self.assertEqual(mock_post.call_count, 2)
+        q1 = mock_post.call_args_list[0][1]["json"]["query"]
+        q2 = mock_post.call_args_list[1][1]["json"]["query"]
+        self.assertIn("vessels(first: 20", q1)
+        self.assertIn("vessels(first: 5", q2)
+        # Check query fields
+        self.assertIn("technicalManager", q1)
+        self.assertIn("ismManager", q1)
+        self.assertIn("commercialManager", q1)
+        self.assertIn("operator", q1)
+        self.assertIn("registeredOwner", q1)
+        self.assertIn("beneficialOwner", q1)
+        self.assertIn("grossTonnage", q1)
+        self.assertIn("deadweightTonnage", q1)
+        # Verify it does NOT query disponentOwner/commercialOperator/builder/classSociety
+        self.assertNotIn("disponentOwner", q1)
+        self.assertNotIn("commercialOperator", q1)
+
+    @patch("integrations.kpler.graphql.requests.post")
+    def test_fetch_vessels_forbidden_raises_kpler_access_error(self, mock_post):
+        from integrations.kpler.exceptions import KplerAccessError
+        from integrations.kpler.graphql import fetch_vessels
+
+        # GraphQL FORBIDDEN error
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {
+            "errors": [
+                {
+                    "message": "Not sufficient permissions to access field [management]",
+                    "extensions": {"code": "FORBIDDEN"},
+                }
+            ]
+        }
+        mock_post.return_value = mock_resp
+
+        with self.assertRaises(KplerAccessError) as ctx:
+            fetch_vessels(["9697428"])
+        self.assertIn("Vessels particulars and ownership are not enabled for this key", str(ctx.exception))
+
+        # HTTP 403
+        resp_403 = MagicMock()
+        resp_403.status_code = 403
+        resp_403.json.return_value = {"message": "Forbidden"}
+        mock_post.return_value = resp_403
+
+        with self.assertRaises(KplerAccessError):
+            fetch_vessels(["9697428"])
+
+    @patch("integrations.kpler.graphql.requests.post")
+    def test_fetch_vessels_rate_limit_and_auth_error(self, mock_post):
+        from integrations.kpler.exceptions import AuthenticationError, CallLimitError
+        from integrations.kpler.graphql import fetch_vessels
+
+        # 401
+        mock_resp_401 = MagicMock()
+        mock_resp_401.status_code = 401
+        mock_post.return_value = mock_resp_401
+
+        with self.assertRaises(AuthenticationError):
+            fetch_vessels(["9697428"])
+
+        # 429
+        mock_resp_429 = MagicMock()
+        mock_resp_429.status_code = 429
+        mock_post.return_value = mock_resp_429
+
+        with self.assertRaises(CallLimitError):
+            fetch_vessels(["9697428"])
+

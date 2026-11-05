@@ -26,6 +26,10 @@ class CallLimitError(KplerError):
     """MarineTraffic error code 5 ('ABOVE SERVICE CALL LIMIT') or HTTP 429."""
 
 
+class KplerAccessError(KplerError):
+    """Vessels particulars and ownership are not enabled for this key (FORBIDDEN / 403 / access-denied)."""
+
+
 class ParameterError(KplerError):
     """Missing or invalid parameter (e.g. MarineTraffic 2a12, 1o, or GraphQL validation failure)."""
 

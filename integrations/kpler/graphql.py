@@ -9,6 +9,8 @@ import requests
 
 from .exceptions import (
     AuthenticationError,
+    CallLimitError,
+    KplerAccessError,
     NotEntitledError,
     ParameterError,
     ProviderRequestError,
@@ -202,6 +204,115 @@ OWNERSHIP_QUERY = """query GetOwnership {
   }
 }"""
 
+VESSELS_QUERY = """query GetVessels {
+  vessels(first: __FIRST__, where: { filters: [{ field: "identifier.imo", op: IN, values: __VALUES__ }], operator: AND }, after: __AFTER__) {
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    nodes {
+      identifier {
+        imo
+        mmsi
+        callSign
+        shipId
+      }
+      particulars {
+        general {
+          name
+          flag
+          vesselType
+          vesselSizeSegment
+        }
+        hull {
+          yearOfBuild
+        }
+        dimension {
+          lengthOverall
+          breadthExtreme
+          draught
+        }
+        tonnage {
+          grossTonnage
+          deadweightTonnage
+        }
+        surveyMaintenance {
+          lastDryDock
+          lastRenewalSurvey
+        }
+      }
+      management {
+        registeredOwner {
+          current {
+            name
+            country
+            address
+            website
+            email
+            startDate
+            endDate
+          }
+        }
+        beneficialOwner {
+          current {
+            name
+            country
+            address
+            website
+            email
+            startDate
+            endDate
+          }
+        }
+        commercialManager {
+          current {
+            name
+            country
+            address
+            website
+            email
+            startDate
+            endDate
+          }
+        }
+        operator {
+          current {
+            name
+            country
+            address
+            website
+            email
+            startDate
+            endDate
+          }
+        }
+        technicalManager {
+          current {
+            name
+            country
+            address
+            website
+            email
+            startDate
+            endDate
+          }
+        }
+        ismManager {
+          current {
+            name
+            country
+            address
+            website
+            email
+            startDate
+            endDate
+          }
+        }
+      }
+    }
+  }
+}"""
+
 
 def _validate_and_dedup_imos(imos: list[str]) -> list[str]:
     """Validates each IMO is exactly 7 digits after stripping; deduplicates while preserving order."""
@@ -229,7 +340,7 @@ def _build_query(template: str, first: int, imos: list[str], after: Optional[str
     )
 
 
-def _handle_graphql_errors(data: dict, status_code: int, endpoint: str):
+def _handle_graphql_errors(data: dict, status_code: int, endpoint: str, label: str = ""):
     if not isinstance(data, dict):
         return
     errors = data.get("errors")
@@ -241,7 +352,22 @@ def _handle_graphql_errors(data: dict, status_code: int, endpoint: str):
     extensions = first_err.get("extensions") or {}
     code = extensions.get("code")
 
-    if code == "FORBIDDEN" or status_code == 403:
+    is_forbidden = (
+        code == "FORBIDDEN"
+        or status_code == 403
+        or "access-denied" in msg.lower()
+        or "not sufficient permissions" in msg.lower()
+    )
+
+    if is_forbidden:
+        if label == "vessels":
+            logger.info("Kpler GraphQL error=KplerAccessError endpoint=%s", endpoint)
+            raise KplerAccessError(
+                "Vessels particulars and ownership are not enabled for this key",
+                endpoint=endpoint,
+                status_code=status_code or 403,
+            )
+
         field = None
         match = re.search(r"access field \[([^\]]+)\]", msg)
         if match:
@@ -259,7 +385,7 @@ def _handle_graphql_errors(data: dict, status_code: int, endpoint: str):
     raise ProviderRequestError(msg, endpoint=endpoint, status_code=status_code)
 
 
-def _execute_graphql_query(template: str, imos: list[str], label: str) -> list[dict]:
+def _execute_graphql_query(template: str, imos: list[str], label: str, max_chunk_size: Optional[int] = None) -> list[dict]:
     clean_imos = _validate_and_dedup_imos(imos)
     if not clean_imos:
         return []
@@ -277,6 +403,9 @@ def _execute_graphql_query(template: str, imos: list[str], label: str) -> list[d
     page_size = getattr(settings, "KPLER_GRAPHQL_PAGE_SIZE", 100)
     if not (1 <= page_size <= 1000):
         page_size = 100
+
+    if max_chunk_size:
+        page_size = min(page_size, max_chunk_size)
 
     headers = {
         "Authorization": f"Basic {api_key}",
@@ -306,10 +435,30 @@ def _execute_graphql_query(template: str, imos: list[str], label: str) -> list[d
                 logger.info("Kpler GraphQL query=%s error=AuthenticationError endpoint=%s", label, endpoint)
                 raise AuthenticationError("Authentication failed (HTTP 401)", endpoint=endpoint, status_code=401)
 
+            if response.status_code == 429:
+                logger.info("Kpler GraphQL query=%s error=CallLimitError endpoint=%s", label, endpoint)
+                raise CallLimitError("Rate limit exceeded (HTTP 429)", endpoint=endpoint, status_code=429)
+
+            if response.status_code == 403:
+                if label == "vessels":
+                    logger.info("Kpler GraphQL error=KplerAccessError endpoint=%s", endpoint)
+                    raise KplerAccessError(
+                        "Vessels particulars and ownership are not enabled for this key",
+                        endpoint=endpoint,
+                        status_code=403,
+                    )
+                raise NotEntitledError("Forbidden (HTTP 403)", endpoint=endpoint, status_code=403)
+
             try:
                 data = response.json()
             except Exception as exc:
                 if response.status_code == 403:
+                    if label == "vessels":
+                        raise KplerAccessError(
+                            "Vessels particulars and ownership are not enabled for this key",
+                            endpoint=endpoint,
+                            status_code=403,
+                        ) from exc
                     raise NotEntitledError("Forbidden (HTTP 403)", endpoint=endpoint, status_code=403) from exc
                 if response.status_code == 400:
                     raise ParameterError(
@@ -321,7 +470,7 @@ def _execute_graphql_query(template: str, imos: list[str], label: str) -> list[d
                     status_code=response.status_code,
                 ) from exc
 
-            _handle_graphql_errors(data, response.status_code, endpoint)
+            _handle_graphql_errors(data, response.status_code, endpoint, label=label)
 
             if response.status_code >= 400:
                 raise ProviderRequestError(
@@ -360,3 +509,8 @@ def fetch_particulars(imos: list[str]) -> list[dict]:
 def fetch_ownership(imos: list[str]) -> list[dict]:
     """Fetch vessel ownership & management for a list of IMOs via Kpler GraphQL."""
     return _execute_graphql_query(OWNERSHIP_QUERY, imos, "ownership")
+
+
+def fetch_vessels(imos: list[str]) -> list[dict]:
+    """Fetch vessel particulars & management in batches of at most 20 via Kpler GraphQL."""
+    return _execute_graphql_query(VESSELS_QUERY, imos, "vessels", max_chunk_size=20)
