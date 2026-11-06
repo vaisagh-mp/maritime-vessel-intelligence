@@ -3,6 +3,8 @@ from django.db import IntegrityError
 
 from apps.common.constants import (
     RELATIONSHIP_ROLE_BENEFICIAL_OWNER,
+    RELATIONSHIP_ROLE_COMMERCIAL_MANAGER,
+    RELATIONSHIP_ROLE_REGISTERED_OWNER,
     RELATIONSHIP_ROLE_ISM_MANAGER,
     RELATIONSHIP_ROLE_TECHNICAL_MANAGER,
 )
@@ -43,6 +45,8 @@ class VesselRelationshipTests(TestCase):
             RELATIONSHIP_ROLE_TECHNICAL_MANAGER,
             RELATIONSHIP_ROLE_ISM_MANAGER,
             RELATIONSHIP_ROLE_BENEFICIAL_OWNER,
+    RELATIONSHIP_ROLE_COMMERCIAL_MANAGER,
+    RELATIONSHIP_ROLE_REGISTERED_OWNER,
         ]:
             c = Company.objects.create(name=f"Company {role}", company_type="manager")
             rel = VesselRelationship.objects.create(

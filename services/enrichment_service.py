@@ -11,10 +11,12 @@ from apps.common.constants import (
     COMPANY_TYPE_MANAGER,
     COMPANY_TYPE_OPERATOR,
     COMPANY_TYPE_OWNER,
+    PRIORITY_LOW,
     PRIORITY_MEDIUM,
     RELATIONSHIP_ROLE_BENEFICIAL_OWNER,
     RELATIONSHIP_ROLE_OPERATOR,
     RELATIONSHIP_ROLE_OWNER,
+    RELATIONSHIP_ROLE_REGISTERED_OWNER,
 )
 from apps.companies.models import Company
 from apps.opportunities.models import Opportunity
@@ -212,17 +214,25 @@ def enrich_vessel(parsed_or_id: Any, source: str = "kpler") -> Optional[Dict[str
                 updated_companies += 1
         else:
             # Determine company type
-            if role in (RELATIONSHIP_ROLE_OWNER, RELATIONSHIP_ROLE_BENEFICIAL_OWNER):
+            if role in (
+                RELATIONSHIP_ROLE_OWNER,
+                RELATIONSHIP_ROLE_REGISTERED_OWNER,
+                RELATIONSHIP_ROLE_BENEFICIAL_OWNER,
+            ):
                 company_type = COMPANY_TYPE_OWNER
             elif role == RELATIONSHIP_ROLE_OPERATOR:
                 company_type = COMPANY_TYPE_OPERATOR
             else:
                 company_type = COMPANY_TYPE_MANAGER
 
+            # Priority rule: medium only when BOTH website and email are present, else low (never high)
+            has_both_contacts = bool(party.get("website") and party.get("email"))
+            priority = PRIORITY_MEDIUM if has_both_contacts else PRIORITY_LOW
+
             company = Company.objects.create(
                 name=party_name,
                 company_type=company_type,
-                priority=PRIORITY_MEDIUM,
+                priority=priority,
                 country=party_country or "",
                 address=party.get("address") or "",
                 website=party.get("website") or "",

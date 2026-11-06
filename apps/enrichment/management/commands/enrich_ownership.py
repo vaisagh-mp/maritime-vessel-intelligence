@@ -301,9 +301,12 @@ class Command(BaseCommand):
                 self.stderr.write("Stopping run immediately. Nothing saved for this batch.")
                 break
 
+            returned_imos = set()
             for node in nodes:
                 try:
                     parsed = parse_vessel_node(node)
+                    if parsed.get("imo"):
+                        returned_imos.add(parsed["imo"])
                     res = enrich_vessel(parsed, source="kpler:live")
                     if res:
                         total_vessels_updated += 1
@@ -314,6 +317,11 @@ class Command(BaseCommand):
                 except Exception as exc:
                     errors += 1
                     logger.error("Error saving enriched vessel: %s", exc)
+
+            # Mark ownership checked for any IMO in batch that wasn't returned in provider nodes
+            missing_imos = set(batch) - returned_imos
+            if missing_imos:
+                Vessel.objects.filter(imo__in=missing_imos).update(ownership_checked_at=timezone.now())
 
             if b_idx < len(batches):
                 time.sleep(pause_seconds)

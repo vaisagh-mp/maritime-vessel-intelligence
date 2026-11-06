@@ -9,6 +9,7 @@ from apps.common.constants import (
     RELATIONSHIP_ROLE_ISM_MANAGER,
     RELATIONSHIP_ROLE_OPERATOR,
     RELATIONSHIP_ROLE_OWNER,
+    RELATIONSHIP_ROLE_REGISTERED_OWNER,
     RELATIONSHIP_ROLE_TECHNICAL_MANAGER,
 )
 from integrations.kpler.vessel_parser import parse_vessel_node
@@ -63,7 +64,7 @@ class VesselParserTests(TestCase):
         self.assertEqual(ism["name"], "Pacific Shipmanagement Ltd")
         self.assertEqual(ism["email"], "ism@pacificshipmanagement.com")
 
-        owner = roles[RELATIONSHIP_ROLE_OWNER]
+        owner = roles[RELATIONSHIP_ROLE_REGISTERED_OWNER]
         self.assertEqual(owner["name"], "Pacific Maritime Ltd")
         self.assertEqual(owner["email"], "owner@pacificmaritime.com")
 
@@ -95,8 +96,9 @@ class VesselParserTests(TestCase):
         self.assertIsNone(tech["website"])
         self.assertIsNone(tech["email"])
 
-        self.assertIn(RELATIONSHIP_ROLE_OWNER, roles)
-        owner = roles[RELATIONSHIP_ROLE_OWNER]
+        self.assertIn(RELATIONSHIP_ROLE_OWNER,
+    RELATIONSHIP_ROLE_REGISTERED_OWNER, roles)
+        owner = roles[RELATIONSHIP_ROLE_REGISTERED_OWNER]
         self.assertEqual(owner["name"], "Nordic Tankers KS")
         self.assertIsNone(owner["email"])
 
@@ -109,8 +111,9 @@ class VesselParserTests(TestCase):
         parties = parsed["parties"]
         roles = {p["role"]: p for p in parties}
 
-        self.assertIn(RELATIONSHIP_ROLE_OWNER, roles)
-        owner = roles[RELATIONSHIP_ROLE_OWNER]
+        self.assertIn(RELATIONSHIP_ROLE_OWNER,
+    RELATIONSHIP_ROLE_REGISTERED_OWNER, roles)
+        owner = roles[RELATIONSHIP_ROLE_REGISTERED_OWNER]
         self.assertEqual(owner["name"], "Phoenix Shipping Lines Co")
         self.assertEqual(owner["website"], "https://phoenixshipping.pa")
         self.assertEqual(owner["email"], "registry@phoenixshipping.pa")  # Lowercased

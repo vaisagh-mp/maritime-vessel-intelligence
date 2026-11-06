@@ -7,9 +7,13 @@ from django.utils import timezone
 
 from apps.common.constants import (
     PRIORITY_HIGH,
+    PRIORITY_LOW,
     PRIORITY_MEDIUM,
+    RELATIONSHIP_ROLE_BENEFICIAL_OWNER,
     RELATIONSHIP_ROLE_ISM_MANAGER,
+    RELATIONSHIP_ROLE_REGISTERED_OWNER,
     RELATIONSHIP_ROLE_TECHNICAL_MANAGER,
+    STAGE_WON,
     ZONE_ANCHORAGE,
 )
 from apps.companies.models import Company
@@ -214,3 +218,108 @@ class EnrichmentServiceTests(TestCase):
         enrich_vessel(parsed)
 
         self.assertEqual(OpportunityStageChange.objects.count(), history_count_before)
+
+    def test_different_registered_and_beneficial_owners_kept_without_churn(self):
+        """A vessel with different registered and beneficial owners keeps both across multiple runs."""
+        vessel = Vessel.objects.create(mmsi="240123000", imo="9146297", name="PACIFIC EXPLORER")
+        parsed = parse_vessel_node(self.raw_nodes["9146297"])
+
+        # First run
+        res1 = enrich_vessel(parsed)
+        reg_rel1 = VesselRelationship.objects.get(
+            vessel=vessel, role=RELATIONSHIP_ROLE_REGISTERED_OWNER
+        )
+        ben_rel1 = VesselRelationship.objects.get(
+            vessel=vessel, role=RELATIONSHIP_ROLE_BENEFICIAL_OWNER
+        )
+        self.assertTrue(reg_rel1.is_current)
+        self.assertTrue(ben_rel1.is_current)
+        self.assertNotEqual(reg_rel1.company_id, ben_rel1.company_id)
+        self.assertEqual(reg_rel1.company.name, "Pacific Maritime Ltd")
+        self.assertEqual(ben_rel1.company.name, "Pacific Holdings Corp")
+
+        # Second run: verify no churn, both remain current, closed_relationships=0
+        res2 = enrich_vessel(parsed)
+        self.assertEqual(res2["closed_relationships"], 0)
+        self.assertEqual(res2["created_relationships"], 0)
+
+        reg_rel2 = VesselRelationship.objects.get(
+            vessel=vessel, role=RELATIONSHIP_ROLE_REGISTERED_OWNER
+        )
+        ben_rel2 = VesselRelationship.objects.get(
+            vessel=vessel, role=RELATIONSHIP_ROLE_BENEFICIAL_OWNER
+        )
+        self.assertTrue(reg_rel2.is_current)
+        self.assertTrue(ben_rel2.is_current)
+
+    def test_company_priority_medium_only_when_both_website_and_email_present(self):
+        """New company gets priority=medium only when website AND email are present, else low."""
+        # Vessel 1 has Pacific Maritime Ltd with both website and email
+        v1 = Vessel.objects.create(mmsi="240123000", imo="9146297", name="PACIFIC EXPLORER")
+        enrich_vessel(parse_vessel_node(self.raw_nodes["9146297"]))
+        comp_with_both = Company.objects.get(name="Pacific Maritime Ltd")
+        self.assertTrue(comp_with_both.website)
+        self.assertTrue(comp_with_both.email)
+        self.assertEqual(comp_with_both.priority, PRIORITY_MEDIUM)
+
+        # Vessel 2 has Bergen Marine AS with no website or email
+        v2 = Vessel.objects.create(mmsi="257123000", imo="9308766", name="NORDIC STAR")
+        enrich_vessel(parse_vessel_node(self.raw_nodes["9308766"]))
+        comp_without_contacts = Company.objects.get(name="Bergen Marine AS")
+        self.assertFalse(comp_without_contacts.website)
+        self.assertFalse(comp_without_contacts.email)
+        self.assertEqual(comp_without_contacts.priority, PRIORITY_LOW)
+
+    def test_person_edited_priority_is_never_overwritten(self):
+        """If a company priority was edited by a human, enrichment preserves it."""
+        Company.objects.create(
+            name="Pacific Maritime Ltd",
+            country="Marshall Islands",
+            priority=PRIORITY_HIGH,  # Hand-edited to high
+        )
+        vessel = Vessel.objects.create(mmsi="240123000", imo="9146297", name="PACIFIC EXPLORER")
+        enrich_vessel(parse_vessel_node(self.raw_nodes["9146297"]))
+
+        comp = Company.objects.get(name="Pacific Maritime Ltd")
+        self.assertEqual(comp.priority, PRIORITY_HIGH)
+
+    def test_scoring_owner_factor_fires_for_enriched_registered_owner(self):
+        """Enriching a registered owner links the vessel to existing relationships for scoring."""
+        # Sister vessel won opportunity with Pacific Maritime Ltd as registered owner
+        owner = Company.objects.create(
+            name="Pacific Maritime Ltd",
+            country="Marshall Islands",
+            company_type="owner",
+            priority=PRIORITY_MEDIUM,
+        )
+        sister_vessel = Vessel.objects.create(mmsi="999000111", name="SISTER VESSEL")
+        VesselRelationship.objects.create(
+            vessel=sister_vessel,
+            company=owner,
+            role=RELATIONSHIP_ROLE_REGISTERED_OWNER,
+            source="manual",
+            is_current=True,
+        )
+        Opportunity.objects.create(
+            vessel=sister_vessel,
+            port=self.port,
+            zone=ZONE_ANCHORAGE,
+            stage=STAGE_WON,
+            score=90,
+        )
+
+        # Target vessel initially has no relationship to owner
+        target_vessel = Vessel.objects.create(
+            mmsi="240123000", imo="9146297", name="PACIFIC EXPLORER", vessel_type="Bulk Carrier", grt=28000
+        )
+        opp = Opportunity.objects.create(
+            vessel=target_vessel, port=self.port, zone=ZONE_ANCHORAGE, stage="detected", score=30
+        )
+        initial_score = opp.score
+
+        # Enrich target vessel -> connects registered owner -> triggers existing_relationship signal (+30)
+        parsed = parse_vessel_node(self.raw_nodes["9146297"])
+        enrich_vessel(parsed)
+
+        opp.refresh_from_db()
+        self.assertGreaterEqual(opp.score, initial_score + 30)
