@@ -1,0 +1,58 @@
+{% extends "web/base.html" %}
+{% load static %}
+
+{% block title %}{{ company.name }} — Vessel Intelligence{% endblock title %}
+
+{% block main_attrs %} data-company-id="{{ company.id }}"{% endblock main_attrs %}
+
+{% block styles %}
+<link rel="stylesheet" href="{% static 'web/css/board.css' %}">
+<link rel="stylesheet" href="{% static 'web/css/pages.css' %}">
+{% endblock styles %}
+
+{% block content %}
+<header id="page-header" class="card company-header">
+    <div class="company-header-top">
+        <a href="/companies/" id="back-link" class="back-link">&larr; Back to companies</a>
+    </div>
+    <div class="company-header-main">
+        <h1 id="company-name" class="company-title">{{ company.name }}</h1>
+        <div class="company-subtitle" id="company-subtitle">
+            <span class="sub-item">Type: <strong id="header-type">{{ company.company_type|default:"—" }}</strong></span>
+            <span class="sub-item" id="header-country-wrap">Country: <strong id="header-country">{{ company.country|default:"—" }}</strong></span>
+        </div>
+    </div>
+    <div class="company-contact" id="company-contact"></div>
+    <div class="company-summary" id="company-summary"></div>
+</header>
+
+<section class="card" aria-labelledby="heading-vessels">
+    <div class="card-header">
+        <h2 id="heading-vessels" class="card-title">Vessels</h2>
+        <div class="toolbar" role="group" aria-label="Vessel filters">
+            <div class="toolbar-field">
+                <label for="filter-role">Role</label>
+                <select id="filter-role" name="role">
+                    <option value="">All roles</option>
+                    <option value="owner">Owner</option>
+                    <option value="registered_owner">Registered Owner</option>
+                    <option value="beneficial_owner">Beneficial Owner</option>
+                    <option value="manager">Manager</option>
+                    <option value="technical_manager">Technical Manager</option>
+                    <option value="ism_manager">ISM Manager</option>
+                    <option value="commercial_manager">Commercial Manager</option>
+                    <option value="operator">Operator</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    <div class="card-body" id="vessel-table-host">
+        <div class="loading-state" role="status">Loading vessels…</div>
+    </div>
+    <div id="pager" class="pager"></div>
+</section>
+{% endblock content %}
+
+{% block scripts %}
+<script type="module" src="{% static 'web/js/company.js' %}{% if static_version %}?v={{ static_version }}{% endif %}"></script>
+{% endblock scripts %}

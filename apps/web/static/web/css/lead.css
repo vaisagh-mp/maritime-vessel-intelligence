@@ -1,0 +1,475 @@
+/**
+ * apps/web/static/web/css/lead.css
+ * Styling for Lead Detail & Pipeline page.
+ * Uses design tokens from tokens.css; WCAG AA contrast (>4.5:1) in light & dark modes.
+ * Responsive: 2 columns from 900px, 1 column below; no horizontal scrolling at 360px.
+ */
+
+/* 1. Header Card */
+.lead-header {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-24);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-16);
+}
+
+.lead-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-12);
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-8);
+    font-size: var(--font-sm);
+    font-weight: 500;
+    color: var(--color-accent);
+    text-decoration: none;
+}
+
+.back-link:hover,
+.back-link:focus-visible {
+    color: var(--color-accent-hover);
+    text-decoration: underline;
+}
+
+.header-badges {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-8);
+}
+
+.header-badges .badge {
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+.lead-title-row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+}
+
+.lead-title {
+    font-size: var(--font-3xl);
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--color-text);
+    margin: 0;
+}
+
+.lead-vessel-link {
+    color: var(--color-text);
+    text-decoration: none;
+}
+
+.lead-vessel-link:hover,
+.lead-vessel-link:focus-visible {
+    color: var(--color-accent);
+    text-decoration: underline;
+}
+
+.lead-subtitle {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-16);
+    font-size: var(--font-sm);
+    color: var(--color-text-muted);
+}
+
+.lead-subtitle strong {
+    color: var(--color-text);
+    font-weight: 600;
+}
+
+/* Meta definition list block */
+.lead-meta-dl {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+    margin: var(--space-8) 0 0 0;
+    padding: var(--space-12) var(--space-16);
+    background-color: var(--color-bg);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+}
+
+.meta-row {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-12);
+    font-size: var(--font-sm);
+    line-height: 1.5;
+}
+
+.meta-row dt {
+    font-weight: 600;
+    color: var(--color-text-muted);
+    min-width: 60px;
+    flex-shrink: 0;
+}
+
+.meta-row dd {
+    margin: 0;
+    color: var(--color-text);
+    word-break: break-word;
+}
+
+/* 2-Column Responsive Grid */
+.lead-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--section-gap);
+}
+
+@media (min-width: 900px) {
+    .lead-grid {
+        grid-template-columns: 3fr 2fr;
+        align-items: start;
+    }
+}
+
+.lead-col {
+    display: flex;
+    flex-direction: column;
+    gap: var(--section-gap);
+}
+
+/* Progress Strip */
+.progress-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-12);
+    margin-bottom: var(--space-8);
+}
+
+.progress-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-8);
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.progress-step {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-4) var(--space-12);
+    font-size: var(--font-xs);
+    font-weight: 600;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background-color: var(--color-bg);
+    color: var(--color-text-muted);
+    transition: all 0.15s ease;
+}
+
+.progress-step.step-done {
+    background-color: var(--color-success-bg);
+    color: var(--color-success);
+    border-color: var(--color-success);
+}
+
+.progress-step.step-current {
+    background-color: var(--color-accent);
+    color: var(--color-step-current-text);
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-accent);
+}
+
+.progress-step.step-todo {
+    opacity: 0.75;
+}
+
+.side-states-strip {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+    font-size: var(--font-xs);
+    color: var(--color-text-muted);
+}
+
+.side-state-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px var(--space-8);
+    font-size: var(--font-xs);
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    background-color: var(--color-bg);
+    color: var(--color-text-muted);
+}
+
+.side-state-badge.active-follow-up {
+    background-color: var(--band-medium-bg);
+    color: var(--band-medium-text);
+    border-color: var(--band-medium-border);
+}
+
+.side-state-badge.active-lost {
+    background-color: var(--color-danger-bg);
+    color: var(--color-danger);
+    border-color: var(--color-danger);
+}
+
+/* Forms */
+.lead-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-16);
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+}
+
+.form-label {
+    font-size: var(--font-sm);
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.form-select,
+.form-textarea {
+    width: 100%;
+    padding: var(--space-8) var(--space-12);
+    font-size: var(--font-sm);
+    color: var(--color-text);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+.form-select:focus,
+.form-textarea:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.char-counter {
+    font-size: var(--font-xs);
+    color: var(--color-text-muted);
+    text-align: right;
+}
+
+.hint-text {
+    font-size: var(--font-xs);
+    color: var(--color-text-muted);
+}
+
+.hint-warning {
+    font-size: var(--font-xs);
+    color: var(--band-high-text);
+    background-color: var(--band-high-bg);
+    border: 1px solid var(--band-high-border);
+    padding: var(--space-8) var(--space-12);
+    border-radius: var(--radius-md);
+}
+
+.form-error {
+    font-size: var(--font-sm);
+    color: var(--color-danger);
+    background-color: var(--color-danger-bg);
+    border: 1px solid var(--color-danger);
+    padding: var(--space-8) var(--space-12);
+    border-radius: var(--radius-md);
+}
+
+.hidden {
+    display: none;
+}
+
+/* Notes Section */
+.note-add-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-12);
+    padding-bottom: var(--space-16);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.note-form-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-12);
+}
+
+.notes-list,
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-12);
+}
+
+.note-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+    padding: var(--space-12) var(--space-16);
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.note-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: var(--font-xs);
+    color: var(--color-text-muted);
+}
+
+.note-author {
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.note-text {
+    margin: 0;
+    font-size: var(--font-sm);
+    line-height: 1.5;
+    color: var(--color-text);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* Stage History */
+.history-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    padding: var(--space-12) var(--space-16);
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.history-transition {
+    font-size: var(--font-sm);
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.history-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: var(--font-xs);
+    color: var(--color-text-muted);
+}
+
+.history-actor {
+    font-weight: 500;
+}
+
+/* Vessel Summary Details */
+.summary-dl {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    row-gap: var(--space-8);
+    column-gap: var(--space-12);
+    font-size: var(--font-sm);
+    margin: 0;
+}
+
+.summary-dt {
+    color: var(--color-text-muted);
+    font-weight: 500;
+}
+
+.summary-dd {
+    color: var(--color-text);
+    font-weight: 600;
+    margin: 0;
+    word-break: break-word;
+}
+
+/* Empty, Loading, and Retry States */
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    margin-top: var(--space-8);
+}
+
+.btn-load-more {
+    width: 100%;
+}
+
+/* Confirmation Dialog */
+.stage-dialog {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    padding: var(--space-24);
+    max-width: 480px;
+    width: 90%;
+    box-shadow: var(--shadow-dialog);
+}
+
+.stage-dialog::backdrop {
+    background-color: var(--dialog-backdrop);
+    backdrop-filter: blur(2px);
+}
+
+.dialog-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-16);
+}
+
+.dialog-title {
+    font-size: var(--font-xl);
+    font-weight: 700;
+    color: var(--color-text);
+    margin: 0;
+}
+
+.dialog-message {
+    font-size: var(--font-sm);
+    line-height: 1.5;
+    color: var(--color-text);
+    margin: 0;
+}
+
+.dialog-explanation {
+    font-size: var(--font-xs);
+    line-height: 1.4;
+    color: var(--color-text-muted);
+    background-color: var(--color-bg);
+    padding: var(--space-8) var(--space-12);
+    border-radius: var(--radius-md);
+    margin: 0;
+}
+
+.dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-12);
+    margin-top: var(--space-8);
+}
+

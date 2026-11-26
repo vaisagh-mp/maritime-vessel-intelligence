@@ -12,6 +12,7 @@ class Company(models.Model):
     email = models.EmailField(blank=True)
     website = models.URLField(blank=True)
     address = models.TextField(blank=True)
+    country = models.CharField(max_length=100, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

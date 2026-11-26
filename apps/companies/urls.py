@@ -1,8 +1,12 @@
-from rest_framework.routers import DefaultRouter
+from django.urls import path
 
-from .views import CompanyViewSet
+from .overview_views import CompanyOverviewAPIView, CompanyVesselsAPIView
+from .views import CompanyDetailAPIView, CompanyListCreateAPIView
 
-router = DefaultRouter()
-router.register("", CompanyViewSet, basename="company")
-
-urlpatterns = router.urls
+urlpatterns = [
+    path("", CompanyListCreateAPIView.as_view(), name="company-list"),
+    # New read-only endpoints routed BEFORE <int:pk>
+    path("overview/", CompanyOverviewAPIView.as_view(), name="company-overview"),
+    path("<int:pk>/vessels/", CompanyVesselsAPIView.as_view(), name="company-vessels"),
+    path("<int:pk>/", CompanyDetailAPIView.as_view(), name="company-detail"),
+]

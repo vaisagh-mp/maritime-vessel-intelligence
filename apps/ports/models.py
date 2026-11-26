@@ -15,7 +15,14 @@ class Port(models.Model):
         help_text="Center point used for the discovery geofence scan."
     )
     geofence_radius_km = models.FloatField(
-        help_text="Radius (km) passed to DataDocked's circle_radius param."
+        help_text="Radius (km) around the anchorage centre point used for the area scan."
+    )
+    marinetraffic_port_id = models.PositiveIntegerField(
+        null=True, blank=True, unique=True, help_text="MarineTraffic port identifier."
+    )
+    ais_filter = models.TextField(
+        blank=True,
+        help_text="Provider area filter for the AIS call. Empty until the provider confirms the area.",
     )
     active = models.BooleanField(
         default=True, help_text="Only active ports are polled by the discovery task."

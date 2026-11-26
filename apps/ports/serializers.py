@@ -15,8 +15,16 @@ class PortSerializer(serializers.ModelSerializer):
             "anchorage_latitude",
             "anchorage_longitude",
             "geofence_radius_km",
+            "marinetraffic_port_id",
+            "ais_filter",
             "active",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "created_at", "updated_at"]
+        read_only_fields = [
+            "id",
+            "created_at",
+            "updated_at",
+            "marinetraffic_port_id",
+            "ais_filter",
+        ]

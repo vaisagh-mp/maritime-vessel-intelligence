@@ -8,15 +8,6 @@ from rest_framework.views import exception_handler
 logger = logging.getLogger("vessel_intel")
 
 
-class DataDockedAPIError(Exception):
-    """Raised when the DataDocked integration layer receives a bad response."""
-
-    def __init__(self, message, endpoint=None, status_code=None):
-        super().__init__(message)
-        self.endpoint = endpoint
-        self.status_code = status_code
-
-
 class DuplicateOpenOpportunityError(Exception):
     """Raised (internally, defensively) if a duplicate open Opportunity is ever attempted."""
 

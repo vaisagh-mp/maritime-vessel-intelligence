@@ -1,0 +1,22 @@
+{% extends "web/base.html" %}
+
+{% block title %}Access Denied — Vessel Intelligence{% endblock title %}
+
+{% block content %}
+<div class="page-container">
+    <div class="card status-card">
+        <h1>Access Denied</h1>
+        <p>Signed in as <strong>{{ user.get_username }}</strong>.</p>
+        {% if admin_only %}
+        <p class="text-muted">Only an Admin can open this page. Ask an Admin if you need a Business Developer account changed.</p>
+        <p><a href="{% url 'web:home' %}">Back to the dashboard</a></p>
+        {% else %}
+        <p class="text-muted">This account has no role assigned. An Admin or BD Manager role is required to access this application.</p>
+        <form method="post" action="{% url 'web:logout' %}" class="logout-form">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-logout">Logout</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endblock content %}

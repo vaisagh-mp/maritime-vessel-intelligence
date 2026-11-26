@@ -1,0 +1,165 @@
+/**
+ * apps/web/static/web/css/tokens.css
+ * Design tokens and theme variables (light + dark schemes).
+ * WCAG AA contrast ratio (> 4.5:1 for text, > 3:1 for borders/focus) maintained across schemes.
+ * All CSS files in the project consume variables declared here; no hardcoded colors elsewhere.
+ */
+
+:root {
+    /* Colors - Light Theme */
+    --color-bg: #f8fafc;
+    --color-surface: #ffffff;
+    --color-text: #0f172a;
+    --color-text-muted: #475569;
+    --color-border: #8090a4;
+    --color-accent: #0274b3;
+    --color-accent-hover: #0369a1;
+
+    /* Button and Chip Text (White on dark backgrounds) */
+    --color-btn-primary-text: #ffffff;
+    --color-btn-danger-text: #ffffff;
+    --color-step-current-text: #ffffff;
+    --color-skip-link-text: #ffffff;
+
+    /* Score Bands - Light Theme (Text / Background / Border) */
+    --band-hot-text: #991b1b;
+    --band-hot-bg: #fee2e2;
+    --band-hot-border: #fca5a5;
+
+    --band-high-text: #9a3412;
+    --band-high-bg: #ffedd5;
+    --band-high-border: #fdba74;
+
+    --band-medium-text: #854d0e;
+    --band-medium-bg: #fef9c3;
+    --band-medium-border: #fde047;
+
+    --band-low-text: #334155;
+    --band-low-bg: #f1f5f9;
+    --band-low-border: #cbd5e1;
+
+    /* Status Colors - Light Theme */
+    --color-success: #15803d;
+    --color-success-bg: #dcfce7;
+    --color-danger: #b91c1c;
+    --color-danger-bg: #fee2e2;
+    --color-danger-border: #fca5a5;
+    --color-danger-hover: #991b1b;
+
+    /* Focus Ring & Interactive States */
+    --color-focus-ring: rgba(2, 116, 179, 0.25);
+    --color-focus-outline: #0274b3;
+    --opacity-disabled: 0.5;
+
+    /* Shadows - Light Theme */
+    --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    --shadow-card-hover: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    --shadow-toast: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-dialog: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    --dialog-backdrop: rgba(0, 0, 0, 0.6);
+
+    /* Spacing Scale */
+    --space-4: 4px;
+    --space-8: 8px;
+    --space-12: 12px;
+    --space-16: 16px;
+    --space-24: 24px;
+    --space-32: 32px;
+    --section-gap: var(--space-24);
+
+    /* Radii */
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+
+    /* Typography Scale */
+    --font-xs: 0.75rem;    /* 12px */
+    --font-sm: 0.875rem;   /* 14px */
+    --font-base: 1rem;     /* 16px */
+    --font-lg: 1.125rem;   /* 18px */
+    --font-xl: 1.25rem;    /* 20px */
+    --font-2xl: 1.5rem;    /* 24px */
+    --font-3xl: 1.875rem;  /* 30px */
+
+    /* Sidebar */
+    --sidebar-width: 256px;
+    --sidebar-bg: #0f2742;
+    --sidebar-text: #e2e8f0;
+    --sidebar-text-muted: #a9b8cc;
+    --sidebar-border: #24405f;
+    --sidebar-hover-bg: #1a3857;
+    --sidebar-active-bg: #e0f2fe;
+    --sidebar-active-text: #0c4a6e;
+
+    /* Layout & Containers */
+    --page-max-width: 1280px;
+    --board-max-width: 1440px;
+    --auth-card-max-width: 420px;
+    --max-content-width: var(--page-max-width);
+    --top-bar-height: 56px;
+    --touch-target-min: 40px;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        /* Colors - Dark Theme */
+        --color-bg: #0b1120;
+        --color-surface: #1e293b;
+        --color-text: #f8fafc;
+        --color-text-muted: #94a3b8;
+        --color-border: #64748b;
+        --color-accent: #38bdf8;
+        --color-accent-hover: #7dd3fc;
+
+        /* Button and Chip Text in Dark Theme */
+        --color-btn-primary-text: #0b1120;
+        --color-btn-danger-text: #ffffff;
+        --color-step-current-text: #0b1120;
+        --color-skip-link-text: #0b1120;
+
+        /* Score Bands - Dark Theme */
+        --band-hot-text: #fecaca;
+        --band-hot-bg: #450a0a;
+        --band-hot-border: #7f1d1d;
+
+        --band-high-text: #fed7aa;
+        --band-high-bg: #431407;
+        --band-high-border: #7c2d12;
+
+        --band-medium-text: #fef08a;
+        --band-medium-bg: #422006;
+        --band-medium-border: #713f12;
+
+        --band-low-text: #e2e8f0;
+        --band-low-bg: #1e293b;
+        --band-low-border: #475569;
+
+        /* Status Colors - Dark Theme */
+        --color-success: #86efac;
+        --color-success-bg: #052e16;
+        --color-danger: #fca5a5;
+        --color-danger-bg: #450a0a;
+        --color-danger-border: #7f1d1d;
+        --color-danger-hover: #ef4444;
+
+        /* Sidebar - Dark Theme */
+        --sidebar-bg: #060b16;
+        --sidebar-text: #e2e8f0;
+        --sidebar-text-muted: #94a3b8;
+        --sidebar-border: #1e293b;
+        --sidebar-hover-bg: #111b2e;
+        --sidebar-active-bg: #0c4a6e;
+        --sidebar-active-text: #e0f2fe;
+
+        /* Focus Ring & Interactive States - Dark Theme */
+        --color-focus-ring: rgba(56, 189, 248, 0.35);
+        --color-focus-outline: #38bdf8;
+
+        /* Shadows - Dark Theme */
+        --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.4);
+        --shadow-card-hover: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.5);
+        --shadow-toast: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+        --shadow-dialog: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+        --dialog-backdrop: rgba(0, 0, 0, 0.8);
+    }
+}

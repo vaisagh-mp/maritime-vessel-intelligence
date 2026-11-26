@@ -1,0 +1,12 @@
+# Add these to your real .env (git-ignored). Never commit keys.
+MARINETRAFFIC_API_KEY= 8a2af9960526c68d9f3422b2e7bbffd019a802ac
+KPLER_EXPECTED_PORTID_SINGAPORE=290
+KPLER_EXPECTED_PORTID_FUJAIRAH=790
+
+# AIS Latest: fill in ONLY from developers.kpler.com/spec/ais or the portal.
+KPLER_API_KEY=eU94bnhUUVhIWlRtWHByOXJSb3Brd3JnR2k4bm1ZV1A6bW5vOHo2cXRhUHczTWk4aEVPbW5lV0s1RFdaRDRPUzhkam5XNThUYXduNjViWlNJajQ4MWRxdFc2Qkg3UGpTSQ==
+KPLER_AIS_URL=                     # or KPLER_AIS_URL_SINGAPORE / KPLER_AIS_URL_FUJAIRAH
+KPLER_AIS_METHOD=GET               # or POST
+KPLER_AIS_AUTH_HEADER=Authorization
+KPLER_AIS_AUTH_SCHEME=Bearer       # leave empty if the key is sent raw
+KPLER_AIS_PARAMS_JSON=             # JSON: query params (GET) or body (POST); per-port: KPLER_AIS_PARAMS_JSON_SINGAPORE

@@ -254,3 +254,54 @@ class AdminCompanyTests(TestCase):
     def test_admin_post_company_returns_201(self):
         response = self.client.post("/api/v1/companies/", _company_payload(), format="json")
         self.assertEqual(response.status_code, 201)
+
+
+class TestAuthMeEndpoint(TestCase):
+    """Tests for GET /api/v1/auth/me/ (Part A)."""
+
+    def setUp(self):
+        self.admin_user = _make_user("admin_me", groups=["Admin"])
+        self.bd_user = _make_user("bd_me", groups=["BD Manager"])
+        self.plain_user = _make_user("plain_me", groups=[])
+        self.superuser = _make_user("root_me", superuser=True)
+
+    def test_admin_role_introspection(self):
+        client = _authed_client(self.admin_user)
+        response = client.get("/api/v1/auth/me/")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["username"], "admin_me")
+        self.assertEqual(data["role"], "admin")
+        self.assertIn("id", data)
+        self.assertIn("full_name", data)
+        self.assertIn("is_staff", data)
+
+    def test_bd_manager_role_introspection(self):
+        client = _authed_client(self.bd_user)
+        response = client.get("/api/v1/auth/me/")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["username"], "bd_me")
+        self.assertEqual(data["role"], "bd_manager")
+
+    def test_no_group_user_role_introspection(self):
+        client = _authed_client(self.plain_user)
+        response = client.get("/api/v1/auth/me/")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["username"], "plain_me")
+        self.assertEqual(data["role"], "none")
+
+    def test_superuser_implicit_admin_role_introspection(self):
+        client = _authed_client(self.superuser)
+        response = client.get("/api/v1/auth/me/")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["username"], "root_me")
+        self.assertEqual(data["role"], "admin")
+
+    def test_anonymous_me_request_denied(self):
+        client = APIClient()
+        response = client.get("/api/v1/auth/me/")
+        self.assertIn(response.status_code, (401, 403))
+

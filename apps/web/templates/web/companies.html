@@ -1,0 +1,88 @@
+{% extends "web/base.html" %}
+{% load static %}
+
+{% block title %}Companies — Vessel Intelligence{% endblock title %}
+
+{% block styles %}
+<link rel="stylesheet" href="{% static 'web/css/board.css' %}">
+<link rel="stylesheet" href="{% static 'web/css/pages.css' %}">
+{% endblock styles %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header-row">
+        <div class="page-header">
+            <h1 id="page-title">Companies</h1>
+            <p class="text-muted page-sub">Fleet operators and vessel managers. <span class="count-note"><span id="list-count">0</span> companies</span></p>
+        </div>
+    </div>
+
+    <div class="filter-bar" role="search" aria-label="Company filters">
+        <div class="filter-row">
+            <div class="filter-field filter-wide">
+                <label for="filter-q">Search</label>
+                <input type="search" id="filter-q" name="q" placeholder="Company name">
+            </div>
+            <div class="filter-field">
+                <label for="filter-country">Country</label>
+                <input type="text" id="filter-country" name="country" placeholder="All countries">
+            </div>
+            <div class="filter-field">
+                <label for="filter-type">Type</label>
+                <select id="filter-type" name="type">
+                    <option value="">All types</option>
+                    <option value="owner">Owner</option>
+                    <option value="manager">Manager</option>
+                    <option value="operator">Operator</option>
+                    <option value="broker">Broker</option>
+                </select>
+            </div>
+            <div class="filter-field">
+                <label for="filter-role">Role</label>
+                <select id="filter-role" name="role">
+                    <option value="">All roles</option>
+                    <option value="owner">Owner</option>
+                    <option value="registered_owner">Registered Owner</option>
+                    <option value="beneficial_owner">Beneficial Owner</option>
+                    <option value="manager">Manager</option>
+                    <option value="technical_manager">Technical Manager</option>
+                    <option value="ism_manager">ISM Manager</option>
+                    <option value="commercial_manager">Commercial Manager</option>
+                    <option value="operator">Operator</option>
+                </select>
+            </div>
+            <div class="filter-field">
+                <label for="filter-sort">Sort</label>
+                <select id="filter-sort" name="ordering">
+                    <option value="name">Name A–Z</option>
+                    <option value="-vessels">Most vessels</option>
+                    <option value="vessels">Fewest vessels</option>
+                    <option value="hottest">Hottest leads</option>
+                </select>
+            </div>
+        </div>
+        <div class="filter-row">
+            <div class="filter-checkboxes">
+                <label for="filter-open-leads" class="filter-checkbox">
+                    <input type="checkbox" id="filter-open-leads" name="has_open_leads">
+                    <span>Has open leads</span>
+                </label>
+            </div>
+            <div class="filter-actions">
+                <span id="active-filters-count" class="active-filters-count" aria-live="polite"></span>
+                <span id="filter-status" class="visually-hidden" role="status" aria-live="polite"></span>
+                <button type="button" id="reset-filters" class="btn btn-secondary">Reset filters</button>
+            </div>
+        </div>
+    </div>
+
+    <section aria-label="Company cards">
+        <div id="card-host" class="company-grid" aria-live="polite"></div>
+        <div id="pager" class="pager"></div>
+    </section>
+</div>
+{% endblock content %}
+
+{% block scripts %}
+<script type="module" src="{% static 'web/js/companies.js' %}{% if static_version %}?v={{ static_version }}{% endif %}"></script>
+{% endblock scripts %}

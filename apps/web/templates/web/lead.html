@@ -1,0 +1,172 @@
+{% extends "web/base.html" %}
+{% load static %}
+
+{% block title %}{{ opportunity.vessel.name }} ({{ opportunity.port.name }}) — Lead — Vessel Intelligence{% endblock title %}
+
+{% block main_attrs %} data-lead-id="{{ opportunity.id }}"{% endblock main_attrs %}
+
+{% block styles %}
+<link rel="stylesheet" href="{% static 'web/css/lead.css' %}">
+{% endblock styles %}
+
+{% block content %}
+<!-- Card 1: Header (First child of <main>, full width) -->
+<header id="page-header" class="card lead-header">
+    <div class="lead-header-top">
+        <a href="/priority/24h/" id="back-to-board-link" class="back-link">&larr; Back to leads</a>
+        <div id="header-badges" class="header-badges">
+            {% if opportunity.priority_band %}
+            <span class="badge band-{{ opportunity.priority_band|lower }}">{{ opportunity.priority_band|title }}</span>
+            {% endif %}
+            {% if opportunity.priority_score is not None %}
+            <span class="badge badge-score" title="Lead Score">{{ opportunity.priority_score }} pts</span>
+            {% endif %}
+            {% if opportunity.zone %}
+            <span class="badge badge-zone" title="Arrival Zone">{{ opportunity.zone }}</span>
+            {% endif %}
+            {% if opportunity.is_inbound or opportunity.inbound_status == "expected" or opportunity.inbound_status == "inbound" %}
+            <span class="badge badge-inbound" title="Inbound to port">Inbound</span>
+            {% endif %}
+        </div>
+    </div>
+    <div class="lead-title-row">
+        <h1 class="lead-title">
+            <a id="header-vessel-link" class="lead-vessel-link" href="/vessels/{{ opportunity.vessel.id }}/">{{ opportunity.vessel.name }}</a>
+        </h1>
+        <div class="lead-subtitle" id="header-subtitle">
+            <span>IMO: <strong id="header-imo">{{ opportunity.vessel.imo|default:"—" }}</strong></span>
+            <span>MMSI: <strong id="header-mmsi">{{ opportunity.vessel.mmsi|default:"—" }}</strong></span>
+            <span>Type: <strong id="header-type">{{ opportunity.vessel.vessel_type|default:"—" }}</strong></span>
+            <span>GRT: <strong id="header-grt">{% if opportunity.vessel.grt %}{{ opportunity.vessel.grt }}{% else %}—{% endif %}</strong></span>
+            <span>Flag: <strong id="header-flag">{{ opportunity.vessel.flag|default:"—" }}</strong></span>
+            <span>Port: <strong id="header-port">{{ opportunity.port.name }} ({{ opportunity.port.un_locode }})</strong></span>
+        </div>
+        <dl class="lead-meta-dl" id="header-meta-dl">
+            <div class="meta-row">
+                <dt>ETA</dt>
+                <dd id="header-meta-eta">{% if opportunity.eta %}{{ opportunity.eta|date:"d M Y H:i" }} UTC{% else %}None recorded{% endif %}</dd>
+            </div>
+            <div class="meta-row">
+                <dt>Source</dt>
+                <dd id="header-meta-source">{{ opportunity.eta_source|default:"—" }}</dd>
+            </div>
+            <div class="meta-row">
+                <dt>Reason</dt>
+                <dd id="header-meta-reason">{{ opportunity.lead_reason|default:"No lead rationale recorded." }}</dd>
+            </div>
+        </dl>
+    </div>
+</header>
+
+<div class="lead-grid">
+    <!-- Left Column: Stage & Notes -->
+    <div class="lead-col">
+        <!-- Card 2: Stage & Pipeline -->
+        <section class="card" id="card-stage" aria-labelledby="heading-stage">
+            <div class="card-header">
+                <h2 id="heading-stage" class="card-title">Stage &amp; Pipeline</h2>
+            </div>
+            <div class="card-body" id="body-stage">
+                <div id="progress-strip-container" class="progress-container"></div>
+                <form id="stage-change-form" class="lead-form" novalidate>
+                    <div class="form-group">
+                        <label for="stage-select" class="form-label">Current stage</label>
+                        <select id="stage-select" class="form-select" aria-describedby="stage-select-help"></select>
+                        <span id="stage-select-help" class="hint-text">Select a new stage to transition this lead.</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="stage-note-input" class="form-label">Add a note with this change (optional)</label>
+                        <textarea id="stage-note-input" class="form-textarea" maxlength="2000" rows="3" placeholder="Explain the stage transition..."></textarea>
+                        <span class="hint-text">Will be saved to Notes with this stage transition.</span>
+                        <div class="form-footer-row">
+                            <span id="stage-note-counter" class="char-counter">0 / 2000 characters</span>
+                            <button type="submit" id="stage-update-btn" class="btn btn-primary" disabled>Update stage</button>
+                        </div>
+                    </div>
+                    <div id="stage-same-hint" class="hint-warning hidden" role="status">
+                        Use "Add note" below to save a note without changing the stage.
+                    </div>
+                    <div id="stage-error" class="form-error hidden" role="alert"></div>
+                </form>
+            </div>
+        </section>
+
+        <!-- Card 3: Notes -->
+        <section class="card" id="card-notes" aria-labelledby="heading-notes">
+            <div class="card-header">
+                <h2 id="heading-notes" class="card-title">Notes</h2>
+            </div>
+            <div class="card-body" id="body-notes">
+                <form id="note-add-form" class="note-add-container" novalidate>
+                    <div class="form-group">
+                        <label for="note-text-input" class="form-label">Add note</label>
+                        <textarea id="note-text-input" class="form-textarea" maxlength="2000" rows="3" placeholder="Write a note about this lead..."></textarea>
+                        <span class="hint-text">Add notes to track communications, quotes, and research.</span>
+                        <div class="form-footer-row">
+                            <span id="note-counter" class="char-counter">0 / 2000 characters</span>
+                            <button type="submit" id="note-save-btn" class="btn btn-primary" disabled>Save note</button>
+                        </div>
+                    </div>
+                    <div id="note-error" class="form-error hidden" role="alert"></div>
+                </form>
+                <div id="notes-list" class="notes-list">
+                    <div class="loading-state">Loading notes...</div>
+                </div>
+                <div id="notes-pagination" class="pagination-container"></div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Right Column: Stage History & Vessel Summary -->
+    <div class="lead-col">
+        <!-- Card 4: Stage History -->
+        <section class="card" id="card-history" aria-labelledby="heading-history">
+            <div class="card-header">
+                <h2 id="heading-history" class="card-title">Stage History</h2>
+            </div>
+            <div class="card-body" id="body-history">
+                <div id="history-list" class="history-list">
+                    <div class="loading-state">Loading stage history...</div>
+                </div>
+                <div id="history-pagination" class="pagination-container"></div>
+            </div>
+        </section>
+
+        <!-- Card 5: Vessel Summary -->
+        <section class="card" id="card-vessel-summary" aria-labelledby="heading-vessel-summary">
+            <div class="card-header">
+                <h2 id="heading-vessel-summary" class="card-title">Vessel Summary</h2>
+            </div>
+            <div class="card-body" id="body-vessel-summary">
+                <div id="vessel-summary-details">
+                    <div class="loading-state">Loading vessel summary...</div>
+                </div>
+                <div>
+                    <a id="link-full-vessel" class="btn btn-block" href="/vessels/{{ opportunity.vessel.id }}/">Open full vessel page &rarr;</a>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+
+<!-- Confirmation Modal for Won / Lost -->
+<dialog id="confirm-stage-dialog" class="stage-dialog" aria-labelledby="dialog-title">
+    <form method="dialog" class="dialog-content">
+        <h3 id="dialog-title" class="dialog-title">Confirm stage change</h3>
+        <p id="dialog-message" class="dialog-message"></p>
+        <p class="dialog-explanation">
+            Marking a lead as Won or Lost closes the active pipeline. Rescoring will skip this lead until a new arrival is detected.
+        </p>
+        <div class="dialog-actions">
+            <button type="button" id="dialog-cancel-btn" class="btn">Cancel</button>
+            <button type="button" id="dialog-confirm-btn" class="btn btn-primary">Confirm</button>
+        </div>
+    </form>
+</dialog>
+{% endblock content %}
+
+{% block scripts %}
+<script type="module" src="{% static 'web/js/stages.js' %}{% if static_version %}?v={{ static_version }}{% endif %}"></script>
+<script type="module" src="{% static 'web/js/lead-logic.js' %}{% if static_version %}?v={{ static_version }}{% endif %}"></script>
+<script type="module" src="{% static 'web/js/lead.js' %}{% if static_version %}?v={{ static_version }}{% endif %}"></script>
+{% endblock scripts %}

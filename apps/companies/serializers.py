@@ -4,6 +4,8 @@ from .models import Company
 
 
 class CompanySerializer(serializers.ModelSerializer):
+    vessel_count = serializers.IntegerField(read_only=True, default=0)
+
     class Meta:
         model = Company
         fields = [
@@ -14,7 +16,9 @@ class CompanySerializer(serializers.ModelSerializer):
             "email",
             "website",
             "address",
+            "country",
+            "vessel_count",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "created_at", "updated_at"]
+        read_only_fields = ["id", "created_at", "updated_at", "country"]

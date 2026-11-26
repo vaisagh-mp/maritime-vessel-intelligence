@@ -64,54 +64,56 @@ class EtaZoneSignalTests(TestCase):
         score = calculate_score(opp)
         self.assertGreaterEqual(score, 30)
 
-    def test_24h_zone_scores_30(self):
+    def test_anchorage_bound_zone_scores_25(self):
+        opp = _opportunity(self.vessel, self.port, zone="anchorage_bound")
+        score = calculate_score(opp)
+        self.assertGreaterEqual(score, 25)
+
+    def test_24h_zone_scores_15(self):
         opp = _opportunity(self.vessel, self.port, zone="24h")
         score = calculate_score(opp)
-        self.assertGreaterEqual(score, 30)
+        self.assertGreaterEqual(score, 15)
 
-    def test_72h_zone_no_eta_scores_10(self):
+    def test_72h_zone_no_eta_scores_5(self):
         opp = _opportunity(self.vessel, self.port, zone="72h", eta=None)
         score = calculate_score(opp)
-        # Base should include the zone signal of 10
-        self.assertGreaterEqual(score, 10)
+        self.assertGreaterEqual(score, 5)
 
-    def test_72h_zone_eta_within_24h_scores_30(self):
+    def test_72h_zone_eta_within_24h_scores_15(self):
         eta = timezone.now() + timedelta(hours=12)
         opp = _opportunity(self.vessel, self.port, zone="72h", eta=eta)
         score = calculate_score(opp)
-        self.assertGreaterEqual(score, 30)
+        self.assertGreaterEqual(score, 15)
 
     def test_72h_zone_eta_at_exactly_24h(self):
         eta = timezone.now() + timedelta(hours=24)
         opp = _opportunity(self.vessel, self.port, zone="72h", eta=eta)
         score = calculate_score(opp)
-        # Exactly 24h boundary → should be 30 (within the 24h window)
-        self.assertGreaterEqual(score, 30)
+        self.assertGreaterEqual(score, 15)
 
-    def test_72h_zone_eta_between_24h_and_48h_scores_20(self):
+    def test_72h_zone_eta_between_24h_and_48h_scores_10(self):
         eta = timezone.now() + timedelta(hours=36)
         opp = _opportunity(self.vessel, self.port, zone="72h", eta=eta)
         score = calculate_score(opp)
-        self.assertGreaterEqual(score, 20)
+        self.assertGreaterEqual(score, 10)
 
     def test_72h_zone_eta_at_exactly_48h(self):
         eta = timezone.now() + timedelta(hours=48)
         opp = _opportunity(self.vessel, self.port, zone="72h", eta=eta)
         score = calculate_score(opp)
-        # Exactly 48h → should still be in the 24-48h bucket (+20)
-        self.assertGreaterEqual(score, 20)
+        self.assertGreaterEqual(score, 10)
 
-    def test_72h_zone_eta_between_48h_and_72h_scores_10(self):
+    def test_72h_zone_eta_between_48h_and_72h_scores_5(self):
         eta = timezone.now() + timedelta(hours=60)
         opp = _opportunity(self.vessel, self.port, zone="72h", eta=eta)
         score = calculate_score(opp)
-        self.assertGreaterEqual(score, 10)
+        self.assertGreaterEqual(score, 5)
 
     def test_72h_zone_eta_at_exactly_72h(self):
         eta = timezone.now() + timedelta(hours=72)
         opp = _opportunity(self.vessel, self.port, zone="72h", eta=eta)
         score = calculate_score(opp)
-        self.assertGreaterEqual(score, 10)
+        self.assertGreaterEqual(score, 5)
 
 
 # ---------------------------------------------------------------------------
@@ -164,50 +166,60 @@ class VesselSegmentSignalTests(TestCase):
 # Priority manager signal
 # ---------------------------------------------------------------------------
 
-class PriorityManagerSignalTests(TestCase):
+class ManagerContactSignalTests(TestCase):
+    """The manager signal now scores contact quality, not the manual priority."""
+
     def setUp(self):
         self.port = _port()
         self.vessel = _vessel()
 
-    def test_high_priority_manager_adds_20(self):
-        company = Company.objects.create(name="Top Manager", company_type="manager", priority="high")
-        VesselRelationship.objects.create(
-            vessel=self.vessel, company=company, role="manager", source="test"
+    def _link(self, company, role="manager", **kwargs):
+        return VesselRelationship.objects.create(
+            vessel=self.vessel, company=company, role=role, source="test", **kwargs
         )
+
+    def test_manager_with_website_and_email_adds_20_even_at_low_priority(self):
+        company = Company.objects.create(
+            name="Top Manager", company_type="manager", priority="low",
+            website="https://top.example.com", email="ops@top.example.com",
+        )
+        self._link(company)
         opp = _opportunity(self.vessel, self.port)
-        score = calculate_score(opp)
+        # anchorage (30) + manager with contacts (20)
+        self.assertEqual(calculate_score(opp), 50)
         self.assertIn(20, self._signal_breakdown(opp))
 
-    def test_medium_priority_manager_no_bonus(self):
+    def test_manager_name_only_adds_6(self):
         company = Company.objects.create(name="Mid Manager", company_type="manager", priority="medium")
-        VesselRelationship.objects.create(
-            vessel=self.vessel, company=company, role="manager", source="test"
-        )
+        self._link(company)
         opp = _opportunity(self.vessel, self.port)
-        score = calculate_score(opp)
-        # Only anchorage zone (30)
-        self.assertEqual(score, 30)
+        self.assertEqual(calculate_score(opp), 30 + 6)
 
-    def test_owner_not_manager_no_bonus(self):
-        company = Company.objects.create(name="Owner Co", company_type="owner", priority="high")
-        VesselRelationship.objects.create(
-            vessel=self.vessel, company=company, role="owner", source="test"
-        )
+    def test_high_priority_adds_5_on_top(self):
+        company = Company.objects.create(name="VIP", company_type="manager", priority="high")
+        self._link(company)
         opp = _opportunity(self.vessel, self.port)
-        score = calculate_score(opp)
-        self.assertEqual(score, 30)
+        self.assertEqual(calculate_score(opp), 30 + 6 + 5)
+
+    def test_owner_with_email_scores_as_owner_not_manager(self):
+        company = Company.objects.create(
+            name="Owner Co", company_type="owner", priority="medium", email="o@example.com"
+        )
+        self._link(company, role="registered_owner")
+        opp = _opportunity(self.vessel, self.port)
+        self.assertEqual(calculate_score(opp), 30 + 8)
 
     def _signal_breakdown(self, opp):
         """Helper — returns a list of individual signal scores."""
         from services.scoring_service import (
-            _score_eta_zone, _score_vessel_segment, _score_priority_manager,
+            _score_eta_zone, _score_vessel_segment, _score_contacts,
             _score_existing_relationship, _score_verified_contact,
             _score_previous_enquiry, _score_large_fleet, _score_recent_negative,
         )
         return [
             _score_eta_zone(opp),
             _score_vessel_segment(opp.vessel),
-            _score_priority_manager(opp.vessel),
+            _score_contacts(opp.vessel)[0],
             _score_existing_relationship(opp.vessel, opp),
             _score_verified_contact(opp.vessel),
             _score_previous_enquiry(opp.vessel, opp),
@@ -317,25 +329,26 @@ class LargeFleetSignalTests(TestCase):
     def setUp(self):
         self.port = _port()
 
-    def test_large_dwt_adds_10(self):
-        vessel = _vessel(dwt=82000)
+    def test_large_grt_adds_15(self):
+        vessel = _vessel(grt=50000)
         opp = _opportunity(vessel, self.port)
         from services.scoring_service import _score_large_fleet
-        self.assertEqual(_score_large_fleet(vessel), 10)
+        self.assertEqual(_score_large_fleet(vessel), 15)
 
-    def test_small_dwt_adds_0(self):
-        vessel = _vessel(dwt=25000)
+    def test_medium_grt_adds_12(self):
+        vessel = _vessel(grt=25000)
+        opp = _opportunity(vessel, self.port)
+        from services.scoring_service import _score_large_fleet
+        self.assertEqual(_score_large_fleet(vessel), 12)
+
+    def test_small_grt_adds_0(self):
+        vessel = _vessel(grt=2500)
         opp = _opportunity(vessel, self.port)
         from services.scoring_service import _score_large_fleet
         self.assertEqual(_score_large_fleet(vessel), 0)
 
-    def test_exactly_at_threshold_adds_10(self):
-        vessel = _vessel(dwt=50000)
-        from services.scoring_service import _score_large_fleet
-        self.assertEqual(_score_large_fleet(vessel), 10)
-
-    def test_null_dwt_adds_0(self):
-        vessel = _vessel(dwt=None)
+    def test_null_grt_adds_0(self):
+        vessel = _vessel(grt=None)
         from services.scoring_service import _score_large_fleet
         self.assertEqual(_score_large_fleet(vessel), 0)
 
@@ -387,7 +400,15 @@ class NegativeClampTests(TestCase):
             zone="72h", eta=None,
         )
         score = calculate_score(new_opp)
-        self.assertGreaterEqual(score, 0)
+        self.assertEqual(score, 0)
+
+    def test_previous_lost_does_not_trigger_previous_enquiry_bonus(self):
+        """Part F: STAGE_LOST only gets -20 penalty, never +25 previous enquiry bonus."""
+        from services.scoring_service import _score_previous_enquiry, _score_recent_negative
+        _opportunity(self.vessel, self.port, stage=STAGE_LOST)
+        new_opp = _opportunity(self.vessel, _port(un_locode="SGSIN", name="Singapore"))
+        self.assertEqual(_score_previous_enquiry(self.vessel, new_opp), 0)
+        self.assertEqual(_score_recent_negative(self.vessel, new_opp), -20)
 
 
 # ---------------------------------------------------------------------------
@@ -397,7 +418,7 @@ class NegativeClampTests(TestCase):
 class CombinedSignalsTests(TestCase):
     def test_multiple_signals_stack(self):
         port = _port()
-        vessel = _vessel(vessel_type="Bulk Carrier", dwt=82000)
+        vessel = _vessel(vessel_type="Bulk Carrier", dwt=82000, grt=50000)
         company = Company.objects.create(name="Big Manager", company_type="manager", priority="high")
         VesselRelationship.objects.create(
             vessel=vessel, company=company, role="manager", source="test", verified=True,
@@ -405,9 +426,9 @@ class CombinedSignalsTests(TestCase):
         opp = _opportunity(vessel, port, zone="anchorage")
 
         score = calculate_score(opp)
-        # anchorage (30) + exact segment (20) + priority manager (20)
-        # + verified contact (20) + large DWT (10) = 100
-        self.assertEqual(score, 100)
+        # anchorage (30) + exact segment (20) + manager name only (6) + high-priority (5)
+        # + verified contact (20) + size GRT (15) = 96
+        self.assertEqual(score, 96)
 
 
 # ---------------------------------------------------------------------------

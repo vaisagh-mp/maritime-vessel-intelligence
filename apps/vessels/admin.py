@@ -20,7 +20,7 @@ class HasCompanyRelationshipFilter(admin.SimpleListFilter):
 
 @admin.register(Vessel)
 class VesselAdmin(admin.ModelAdmin):
-    list_display = ["name", "mmsi", "imo", "vessel_type", "dwt", "updated_at"]
+    list_display = ["name", "mmsi", "imo", "vessel_type", "dwt", "grt", "flag", "year_built", "updated_at"]
     list_filter = [HasCompanyRelationshipFilter, "vessel_type"]
     search_fields = ["name", "mmsi", "imo"]
     ordering = ["name"]

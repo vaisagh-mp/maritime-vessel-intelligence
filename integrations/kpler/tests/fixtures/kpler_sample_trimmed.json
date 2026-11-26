@@ -1,0 +1,1253 @@
+{
+  "data": {
+    "vessels": {
+      "nodes": [
+        {
+          "identifier": {
+            "imo": 9308766,
+            "mmsi": 511101460,
+            "callSign": "T8A4829",
+            "eni": null,
+            "shipId": 184295,
+            "uscgOfficialNumber": null,
+            "hin": null,
+            "fishingRegistrationNumber": null
+          },
+          "management": {
+            "beneficialOwner": {
+              "current": {
+                "name": null,
+                "country": null,
+                "address": null,
+                "website": null,
+                "email": null,
+                "startDate": null,
+                "endDate": null
+              }
+            },
+            "registeredOwner": {
+              "current": {
+                "name": "KANHA SHIPPING INC",
+                "country": "MARSHALL ISLANDS",
+                "address": "Trust Company Complex, Ajeltake Road, Ajeltake, Majuro MH 96960, Marshall Islands.",
+                "website": null,
+                "email": "kanhashippinginc@gmail.com",
+                "startDate": "2026-03-16",
+                "endDate": null
+              }
+            },
+            "commercialManager": {
+              "current": {
+                "name": "KANHA SHIPPING INC",
+                "country": "MARSHALL ISLANDS",
+                "address": "Trust Company Complex, Ajeltake Road, Ajeltake, Majuro MH 96960, Marshall Islands.",
+                "website": null,
+                "email": "kanhashippinginc@gmail.com",
+                "startDate": "2026-03-16",
+                "endDate": null
+              }
+            },
+            "operator": {
+              "current": {
+                "name": null,
+                "country": null,
+                "address": null,
+                "website": null,
+                "email": null,
+                "startDate": null,
+                "endDate": null
+              }
+            },
+            "technicalManager": {
+              "current": {
+                "name": "ONTARIO MARINE SERVICES",
+                "country": "INDIA",
+                "address": "Office 17, II Floor, Plot 44, Sector 11, CBD Belapur, Navi Mumbai, Maharashtra, 400614, India.",
+                "website": null,
+                "email": null,
+                "startDate": "2025-11-06",
+                "endDate": null
+              }
+            },
+            "ismManager": {
+              "current": {
+                "name": "ONTARIO MARINE SERVICES",
+                "country": "INDIA",
+                "address": "Office 17, II Floor, Plot 44, Sector 11, CBD Belapur, Navi Mumbai, Maharashtra, 400614, India.",
+                "website": null,
+                "email": null,
+                "startDate": "2025-11-06",
+                "endDate": null
+              }
+            }
+          },
+          "associatedCompanies": {
+            "shipBuilder": {
+              "current": {
+                "name": "SAMHO SHIPBUILDING",
+                "country": "REPUBLIC OF KOREA",
+                "address": "459-6 DONAM-DONG",
+                "website": "http://www.samhoshipyard.com",
+                "email": "business@samhoship.com",
+                "startDate": null,
+                "endDate": null
+              }
+            },
+            "engineBuilder": {
+              "current": {
+                "name": "STX HEAVY INDUSTRIES CO LTD",
+                "country": "REPUBLIC OF KOREA",
+                "address": "222, Jeokhyeon-ro, Seongsan-gu, Changwon-si, Gyeongsangnam-do 51707, South Korea",
+                "website": "http://www.stxhi.co.kr/",
+                "email": null,
+                "startDate": null,
+                "endDate": null
+              }
+            },
+            "classificationSociety": {
+              "current": {
+                "name": "INDIAN REGISTER OF SHIPPING",
+                "country": "INDIA",
+                "address": "52A, Adi Shankaracharya Marg, Powai, Mumbai 400 072, India",
+                "website": "http://www.irclass.org/",
+                "email": "ho@irclass.org",
+                "startDate": "2024-06-11",
+                "endDate": null
+              }
+            },
+            "piClub": {
+              "current": {
+                "name": null,
+                "country": null,
+                "address": null,
+                "website": null,
+                "email": null,
+                "startDate": null,
+                "endDate": null
+              }
+            }
+          },
+          "ownership": {
+            "ultimateBeneficialOwner": [],
+            "beneficialOwner": {
+              "current": {
+                "name": null,
+                "country": null,
+                "address": null,
+                "website": null,
+                "email": null,
+                "startDate": null,
+                "endDate": null
+              }
+            },
+            "registeredOwner": {
+              "current": {
+                "name": "KANHA SHIPPING INC",
+                "country": "MARSHALL ISLANDS",
+                "address": "Trust Company Complex, Ajeltake Road, Ajeltake, Majuro MH 96960, Marshall Islands.",
+                "website": null,
+                "email": "kanhashippinginc@gmail.com",
+                "startDate": "2026-03-16",
+                "endDate": null
+              }
+            }
+          },
+          "commercial": {
+            "disponentOwner": {
+              "current": {
+                "name": "KANHA SHIPPING INC",
+                "country": "MARSHALL ISLANDS",
+                "address": "Trust Company Complex, Ajeltake Road, Ajeltake, Majuro MH 96960, Marshall Islands.",
+                "website": null,
+                "email": "kanhashippinginc@gmail.com",
+                "startDate": "2026-03-16",
+                "endDate": null
+              }
+            },
+            "commercialOperator": {
+              "current": {
+                "name": null,
+                "country": null,
+                "address": null,
+                "website": null,
+                "email": null,
+                "startDate": null,
+                "endDate": null
+              }
+            }
+          },
+          "particulars": {
+            "general": {
+              "name": "KANHA",
+              "commercialFleet": "WET BULK",
+              "generalVesselType": "OIL/CHEMICAL TANKER",
+              "detailedVesselType": "OIL/CHEMICAL TANKER",
+              "serviceStatus": "In Service",
+              "subServiceStatus": null,
+              "flag": "Palau",
+              "portOfRegistry": "Malakal Harbour",
+              "keelLaidDate": "2004-12-20",
+              "fishingLicenseIssuingAuthority": null,
+              "vesselSizeSegment": "Short Sea Tankers",
+              "vesselCategory": "Tanker",
+              "vesselType": "Liquid Tanker",
+              "vesselSubtype": "Oil Chemical Tanker"
+            },
+            "hull": {
+              "yearOfBuild": 2005,
+              "yardNumber": "1052",
+              "hullMaterial": "Steel",
+              "hullMaterialDetailed": null,
+              "hullType": "Double Hull",
+              "decks": "1",
+              "shipYardOfBuild": null,
+              "countryOfBuild": "Republic of Korea",
+              "orderDate": "2003-11-01",
+              "orderPrice": null,
+              "keelLaidDate": "2004-12-20",
+              "builtDate": "2005-08-31",
+              "launchDate": "2005-05-07",
+              "deadDate": null,
+              "iceClass": null
+            },
+            "aisTransceiver": {
+              "lengthFore": 102,
+              "lengthAft": 25.2,
+              "widthLeft": 13,
+              "widthRight": 7.4,
+              "aisTransceiverClass": "Class A"
+            },
+            "dimension": {
+              "lengthOverall": 127.2,
+              "lengthBetweenPerpendiculars": 119,
+              "breadthExtreme": 20.4,
+              "breadthMoulded": 20,
+              "draught": 8.52,
+              "depth": 11.5,
+              "freeboard": 3012,
+              "maxDraught": 8.52
+            },
+            "tonnage": {
+              "grossTonnage": 8351,
+              "deadweightTonnage": 12887,
+              "netTonnage": 3791,
+              "loadedDisplacementTonnage": 16790,
+              "lightDisplacementTonnage": 3903,
+              "tpc": 22,
+              "reducedGrossTonnage": null,
+              "netTonnageSuez": 6953,
+              "netTonnagePanama": 7061
+            },
+            "capacity": {
+              "liquidCapacity": 12778,
+              "gasCapacity": null,
+              "baleCapacity": null,
+              "grainCapacity": null,
+              "teuCapacity": null,
+              "ceuCapacity": null,
+              "passengerCapacity": null,
+              "ballastCapacity": 5163,
+              "oreCapacity": null,
+              "fishHoldCapacity": null,
+              "teu14Capacity": null
+            },
+            "engine": {
+              "enginePower": 5180,
+              "engineUnits": 1,
+              "engineCylinderUnits": 7,
+              "engineBore": 350,
+              "engineStroke": 350,
+              "engineRpm": 170,
+              "engineType": "Diesel Engine",
+              "speedService": 13.4,
+              "propeller": "Fixed Pitch Propeller",
+              "engineModel": "7S35MC - MK7",
+              "auxEngines": null,
+              "specificFuelConsumption": 174,
+              "propellerType": "Fixed Pitch Propeller",
+              "propellers": 1
+            },
+            "fuel": {
+              "mainEngineFuelType": "Marine Diesel Oil",
+              "fuelCapacity": 648,
+              "engineFuelType1": "Marine Diesel Oil",
+              "engineFuelType2": "Marine Diesel Oil",
+              "engineFuelType3": null,
+              "engineFuelTankCapacity1": 648,
+              "engineFuelTankCapacity2": null,
+              "engineFuelTankCapacity3": null,
+              "ammoniaReady": false,
+              "lngReady": false,
+              "methanolReady": false
+            },
+            "cargoTankSystem": {
+              "cargoTanks": null,
+              "boilOffRate": null,
+              "coatingType": "Fully Coated",
+              "coatingDetails": [
+                "Epoxy"
+              ],
+              "imoCoatings": [
+                "Type 3",
+                "Type 2"
+              ],
+              "gasCargoContainmentType": null,
+              "gasCargoContainmentSystem": null,
+              "tankMaxPressure": null,
+              "tankMinTemperature": null
+            },
+            "cargoHandling": {
+              "swlOfCranes": 5,
+              "numberOfCranes": 1,
+              "numberOfHatches": 0,
+              "numberOfHolds": 0,
+              "numberOfReeferPlugs": 0,
+              "fishingGearType": null,
+              "grabsFitted": false
+            },
+            "environmental": {
+              "scrubberType": null,
+              "scrubberFittingDate": null,
+              "ballastWaterTreatmentFitted": false
+            },
+            "surveyMaintenance": {
+              "lastDryDock": "2025-08-30",
+              "lastRenewalSurvey": "2025-08-30"
+            }
+          }
+        },
+        {
+          "identifier": {
+            "imo": 9250218,
+            "mmsi": 352003109,
+            "callSign": "3E5994",
+            "eni": null,
+            "shipId": 211630,
+            "uscgOfficialNumber": null,
+            "hin": null,
+            "fishingRegistrationNumber": null
+          },
+          "management": {
+            "beneficialOwner": {
+              "current": {
+                "name": "BAILIAN STAR SHIPPING LTD",
+                "country": "MARSHALL ISLANDS",
+                "address": "38G7+7WC, Gu Le Lu, Gu Lou Qu, Fu Zhou Shi, Fu Jian Sheng, China, 350001",
+                "website": null,
+                "email": null,
+                "startDate": "2023-10-25",
+                "endDate": null
+              }
+            },
+            "registeredOwner": {
+              "current": {
+                "name": "BAILIAN STAR SHIPPING LTD",
+                "country": "MARSHALL ISLANDS",
+                "address": "38G7+7WC, Gu Le Lu, Gu Lou Qu, Fu Zhou Shi, Fu Jian Sheng, China, 350001",
+                "website": null,
+                "email": null,
+                "startDate": "2023-10-10",
+                "endDate": null
+              }
+            },
+            "commercialManager": {
+              "current": {
+                "name": null,
+                "country": null,
+                "address": null,
+                "website": null,
+                "email": null,
+                "startDate": null,
+                "endDate": null
+              }
+            },
+            "operator": {
+              "current": {
+                "name": "BAILIAN STAR SHIPPING LTD",
+                "country": "MARSHALL ISLANDS",
+                "address": "38G7+7WC, Gu Le Lu, Gu Lou Qu, Fu Zhou Shi, Fu Jian Sheng, China, 350001",
+                "website": null,
+                "email": null,
+                "startDate": "2023-10-10",
+                "endDate": null
+              }
+            },
+            "technicalManager": {
+              "current": {
+                "name": "BAILIAN STAR SHIPPING LTD",
+                "country": "MARSHALL ISLANDS",
+                "address": "38G7+7WC, Gu Le Lu, Gu Lou Qu, Fu Zhou Shi, Fu Jian Sheng, China, 350001",
+                "website": null,
+                "email": null,
+                "startDate": "2023-10-10",
+                "endDate": null
+              }
+            },
+            "ismManager": {
+              "current": {
+                "name": "BAILIAN STAR SHIPPING LTD",
+                "country": "MARSHALL ISLANDS",
+                "address": "38G7+7WC, Gu Le Lu, Gu Lou Qu, Fu Zhou Shi, Fu Jian Sheng, China, 350001",
+                "website": null,
+                "email": null,
+                "startDate": "2023-10-10",
+                "endDate": null
+              }
+            }
+          },
+          "associatedCompanies": {
+            "shipBuilder": {
+              "current": {
+                "name": "IMABARI SHIPBUILDING MARUGAME YARD",
+                "country": "JAPAN",
+                "address": null,
+                "website": "http://www.imazo.co.jp/english",
+                "email": null,
+                "startDate": null,
+                "endDate": null
+              }
+            },
+            "engineBuilder": {
+              "current": {
+                "name": "MITSUI E&S CO LTD",
+                "country": "JAPAN",
+                "address": "3-1-1 Tama, Tamano-shi, Okayama 706-8651, Japan",
+                "website": "http://www.mes.co.jp",
+                "email": null,
+                "startDate": null,
+                "endDate": null
+              }
+            },
+            "classificationSociety": {
+              "current": {
+                "name": "POLISH REGISTER OF SHIPPING",
+                "country": "POLAND",
+                "address": "Jozefa Hallera 126, 80-416 Gdansk, Poland",
+                "website": "https://www.prs.pl/home",
+                "email": "mailbox@prs.pl",
+                "startDate": "2024-04-17",
+                "endDate": null
+              }
+            },
+            "piClub": {
+              "current": {
+                "name": "THE WEST OF ENGLAND SHIP OWNERS MUTUAL INSURANCE ASSOCIATION",
+                "country": "UNITED KINGDOM",
+                "address": "One Creechurch Place, Creechurch Lane, London EC3A 5AF",
+                "website": "https://www.westpandi.com/",
+                "email": "mail@westpandi.com",
+                "startDate": "2024-03-01",
+                "endDate": null
+              }
+            }
+          },
+          "ownership": {
+            "ultimateBeneficialOwner": [],
+            "beneficialOwner": {
+              "current": {
+                "name": "BAILIAN STAR SHIPPING LTD",
+                "country": "MARSHALL ISLANDS",
+                "address": "38G7+7WC, Gu Le Lu, Gu Lou Qu, Fu Zhou Shi, Fu Jian Sheng, China, 350001",
+                "website": null,
+                "email": null,
+                "startDate": "2023-10-25",
+                "endDate": null
+              }
+            },
+            "registeredOwner": {
+              "current": {
+                "name": "BAILIAN STAR SHIPPING LTD",
+                "country": "MARSHALL ISLANDS",
+                "address": "38G7+7WC, Gu Le Lu, Gu Lou Qu, Fu Zhou Shi, Fu Jian Sheng, China, 350001",
+                "website": null,
+                "email": null,
+                "startDate": "2023-10-10",
+                "endDate": null
+              }
+            }
+          },
+          "commercial": {
+            "disponentOwner": {
+              "current": {
+                "name": null,
+                "country": null,
+                "address": null,
+                "website": null,
+                "email": null,
+                "startDate": null,
+                "endDate": null
+              }
+            },
+            "commercialOperator": {
+              "current": {
+                "name": "BAILIAN STAR SHIPPING LTD",
+                "country": "MARSHALL ISLANDS",
+                "address": "38G7+7WC, Gu Le Lu, Gu Lou Qu, Fu Zhou Shi, Fu Jian Sheng, China, 350001",
+                "website": null,
+                "email": null,
+                "startDate": "2023-10-10",
+                "endDate": null
+              }
+            }
+          },
+          "particulars": {
+            "general": {
+              "name": "BAILIAN STAR",
+              "commercialFleet": "DRY BULK",
+              "generalVesselType": "BULK CARRIER",
+              "detailedVesselType": "BULK CARRIER",
+              "serviceStatus": "In Service",
+              "subServiceStatus": null,
+              "flag": "Panama",
+              "portOfRegistry": "Panama",
+              "keelLaidDate": "2001-06-06",
+              "fishingLicenseIssuingAuthority": null,
+              "vesselSizeSegment": "Panamax",
+              "vesselCategory": "Dry Cargo",
+              "vesselType": "Bulk Carrier",
+              "vesselSubtype": "Bulk Carrier"
+            },
+            "hull": {
+              "yearOfBuild": 2002,
+              "yardNumber": "1356",
+              "hullMaterial": "Steel",
+              "hullMaterialDetailed": null,
+              "hullType": "Single Hull",
+              "decks": "1",
+              "shipYardOfBuild": null,
+              "countryOfBuild": "Japan",
+              "orderDate": "2001-03-01",
+              "orderPrice": null,
+              "keelLaidDate": "2001-06-06",
+              "builtDate": "2002-02-01",
+              "launchDate": "2001-11-01",
+              "deadDate": null,
+              "iceClass": null
+            },
+            "aisTransceiver": {
+              "lengthFore": 194,
+              "lengthAft": 30.94,
+              "widthLeft": 13,
+              "widthRight": 19.26,
+              "aisTransceiverClass": "Class A"
+            },
+            "dimension": {
+              "lengthOverall": 224.94,
+              "lengthBetweenPerpendiculars": 217,
+              "breadthExtreme": 32.26,
+              "breadthMoulded": 32.26,
+              "draught": 14.14,
+              "depth": 19.5,
+              "freeboard": 5404,
+              "maxDraught": 14.14
+            },
+            "tonnage": {
+              "grossTonnage": 39727,
+              "deadweightTonnage": 76634,
+              "netTonnage": 25754,
+              "loadedDisplacementTonnage": 86824,
+              "lightDisplacementTonnage": 10190,
+              "tpc": 66,
+              "reducedGrossTonnage": null,
+              "netTonnageSuez": null,
+              "netTonnagePanama": null
+            },
+            "capacity": {
+              "liquidCapacity": null,
+              "gasCapacity": null,
+              "baleCapacity": null,
+              "grainCapacity": 90740,
+              "teuCapacity": null,
+              "ceuCapacity": null,
+              "passengerCapacity": null,
+              "ballastCapacity": 21033,
+              "oreCapacity": null,
+              "fishHoldCapacity": null,
+              "teu14Capacity": null
+            },
+            "engine": {
+              "enginePower": 10320,
+              "engineUnits": 1,
+              "engineCylinderUnits": 6,
+              "engineBore": 600,
+              "engineStroke": 2292,
+              "engineRpm": 89,
+              "engineType": "Diesel Engine",
+              "speedService": 16.7,
+              "propeller": "Fixed Pitch Propeller",
+              "engineModel": "6S60MC",
+              "auxEngines": 4,
+              "specificFuelConsumption": 166,
+              "propellerType": "Fixed Pitch Propeller",
+              "propellers": 1
+            },
+            "fuel": {
+              "mainEngineFuelType": "Marine Diesel Oil",
+              "fuelCapacity": 3293,
+              "engineFuelType1": "Marine Diesel Oil",
+              "engineFuelType2": null,
+              "engineFuelType3": null,
+              "engineFuelTankCapacity1": 3293,
+              "engineFuelTankCapacity2": null,
+              "engineFuelTankCapacity3": null,
+              "ammoniaReady": false,
+              "lngReady": false,
+              "methanolReady": false
+            },
+            "cargoTankSystem": {
+              "cargoTanks": null,
+              "boilOffRate": null,
+              "coatingType": null,
+              "coatingDetails": null,
+              "imoCoatings": null,
+              "gasCargoContainmentType": null,
+              "gasCargoContainmentSystem": null,
+              "tankMaxPressure": null,
+              "tankMinTemperature": null
+            },
+            "cargoHandling": {
+              "swlOfCranes": null,
+              "numberOfCranes": 1,
+              "numberOfHatches": null,
+              "numberOfHolds": null,
+              "numberOfReeferPlugs": null,
+              "fishingGearType": null,
+              "grabsFitted": null
+            },
+            "environmental": {
+              "scrubberType": null,
+              "scrubberFittingDate": null,
+              "ballastWaterTreatmentFitted": null
+            },
+            "surveyMaintenance": {
+              "lastDryDock": "2022-02-27",
+              "lastRenewalSurvey": "2022-02-27"
+            }
+          }
+        },
+        {
+          "identifier": {
+            "imo": 9146297,
+            "mmsi": 370014000,
+            "callSign": "3ERD6",
+            "eni": null,
+            "shipId": 457714,
+            "uscgOfficialNumber": null,
+            "hin": null,
+            "fishingRegistrationNumber": null
+          },
+          "management": {
+            "beneficialOwner": {
+              "current": {
+                "name": "TRANSWORLD HOLDINGS LTD TRANSWORLD GROUP",
+                "country": "UNITED ARAB EMIRATES",
+                "address": "Plot S 20119, Jebel Ali Free Zone, Jebel Ali, PO Box 261036",
+                "website": "http://www.transworld.co/index.html",
+                "email": "tgc@transworld.com",
+                "startDate": "2021-12-09",
+                "endDate": null
+              }
+            },
+            "registeredOwner": {
+              "current": {
+                "name": "BLPL SINGAPORE PTE LTD",
+                "country": "SINGAPORE",
+                "address": "Lower Delta Rd, Singapore 169200",
+                "website": "https://www.tgsblpl.com/",
+                "email": "info@tgsblpl.com",
+                "startDate": "2021-11-17",
+                "endDate": null
+              }
+            },
+            "commercialManager": {
+              "current": {
+                "name": "PROVIDENCE SHIP MANAGEMENT INDIA PVT LTD",
+                "country": "INDIA",
+                "address": "219, Sion - Trombay Rd, Suman Nagar, Chembur, Mumbai, Maharashtra 400071, India",
+                "website": "http://tgsprovidence.com/contact-us.html",
+                "email": "enquiry@tgsprovidence.com",
+                "startDate": "2021-11-17",
+                "endDate": null
+              }
+            },
+            "operator": {
+              "current": {
+                "name": "PROVIDENCE SHIP MANAGEMENT INDIA PVT LTD",
+                "country": "INDIA",
+                "address": "219, Sion - Trombay Rd, Suman Nagar, Chembur, Mumbai, Maharashtra 400071, India",
+                "website": "http://tgsprovidence.com/contact-us.html",
+                "email": "enquiry@tgsprovidence.com",
+                "startDate": "2021-11-17",
+                "endDate": null
+              }
+            },
+            "technicalManager": {
+              "current": {
+                "name": "PROVIDENCE SHIP MANAGEMENT INDIA PVT LTD",
+                "country": "INDIA",
+                "address": "219, Sion - Trombay Rd, Suman Nagar, Chembur, Mumbai, Maharashtra 400071, India",
+                "website": "http://tgsprovidence.com/contact-us.html",
+                "email": "enquiry@tgsprovidence.com",
+                "startDate": "2021-11-17",
+                "endDate": null
+              }
+            },
+            "ismManager": {
+              "current": {
+                "name": "PROVIDENCE SHIP MANAGEMENT INDIA PVT LTD",
+                "country": "INDIA",
+                "address": "219, Sion - Trombay Rd, Suman Nagar, Chembur, Mumbai, Maharashtra 400071, India",
+                "website": "http://tgsprovidence.com/contact-us.html",
+                "email": "enquiry@tgsprovidence.com",
+                "startDate": "2021-11-17",
+                "endDate": null
+              }
+            }
+          },
+          "associatedCompanies": {
+            "shipBuilder": {
+              "current": {
+                "name": "HJ SHIPBUILDING AND CONSTRUCTION CO LTD",
+                "country": "REPUBLIC OF KOREA",
+                "address": "186, Dongbaekkot-gil, Yeongdo-gu, Busan, 49063, South Korea",
+                "website": "https://www.hjsc.co.kr/en/main/",
+                "email": "yjjean@hjsc.co.kr",
+                "startDate": null,
+                "endDate": null
+              }
+            },
+            "engineBuilder": {
+              "current": {
+                "name": "HD HYUNDAI HEAVY INDUSTRIES CO LTD",
+                "country": "REPUBLIC OF KOREA",
+                "address": "1000, Bangeojinsumhwan-doro, Dong-gu",
+                "website": "https://www.hyundai-engine.com/en/",
+                "email": "enginesales@hhi.co.kr",
+                "startDate": null,
+                "endDate": null
+              }
+            },
+            "classificationSociety": {
+              "current": {
+                "name": "KOREAN REGISTER",
+                "country": "REPUBLIC OF KOREA",
+                "address": "36, Myeongji ocean city 9-ro, Gangseo-gu, Busan, 46762, South Korea",
+                "website": "http://www.krs.co.kr/",
+                "email": "krbell@krs.co.kr",
+                "startDate": "2021-08-17",
+                "endDate": null
+              }
+            },
+            "piClub": {
+              "current": {
+                "name": "NORTHSTANDARD",
+                "country": "UNITED KINGDOM",
+                "address": "London EC3V 1LR, UK",
+                "website": "https://north-standard.com/",
+                "email": null,
+                "startDate": "2022-06-09",
+                "endDate": null
+              }
+            }
+          },
+          "ownership": {
+            "ultimateBeneficialOwner": [],
+            "beneficialOwner": {
+              "current": {
+                "name": "TRANSWORLD HOLDINGS LTD TRANSWORLD GROUP",
+                "country": "UNITED ARAB EMIRATES",
+                "address": "Plot S 20119, Jebel Ali Free Zone, Jebel Ali, PO Box 261036",
+                "website": "http://www.transworld.co/index.html",
+                "email": "tgc@transworld.com",
+                "startDate": "2021-12-09",
+                "endDate": null
+              }
+            },
+            "registeredOwner": {
+              "current": {
+                "name": "BLPL SINGAPORE PTE LTD",
+                "country": "SINGAPORE",
+                "address": "Lower Delta Rd, Singapore 169200",
+                "website": "https://www.tgsblpl.com/",
+                "email": "info@tgsblpl.com",
+                "startDate": "2021-11-17",
+                "endDate": null
+              }
+            }
+          },
+          "commercial": {
+            "disponentOwner": {
+              "current": {
+                "name": "PROVIDENCE SHIP MANAGEMENT INDIA PVT LTD",
+                "country": "INDIA",
+                "address": "219, Sion - Trombay Rd, Suman Nagar, Chembur, Mumbai, Maharashtra 400071, India",
+                "website": "http://tgsprovidence.com/contact-us.html",
+                "email": "enquiry@tgsprovidence.com",
+                "startDate": "2021-11-17",
+                "endDate": null
+              }
+            },
+            "commercialOperator": {
+              "current": {
+                "name": "PROVIDENCE SHIP MANAGEMENT INDIA PVT LTD",
+                "country": "INDIA",
+                "address": "219, Sion - Trombay Rd, Suman Nagar, Chembur, Mumbai, Maharashtra 400071, India",
+                "website": "http://tgsprovidence.com/contact-us.html",
+                "email": "enquiry@tgsprovidence.com",
+                "startDate": "2021-11-17",
+                "endDate": null
+              }
+            }
+          },
+          "particulars": {
+            "general": {
+              "name": "BLPL FAITH",
+              "commercialFleet": "CONTAINER SHIPS",
+              "generalVesselType": "CONTAINER SHIP",
+              "detailedVesselType": "CONTAINER SHIP",
+              "serviceStatus": "In Service",
+              "subServiceStatus": null,
+              "flag": "Panama",
+              "portOfRegistry": "Panama",
+              "keelLaidDate": "1997-06-02",
+              "fishingLicenseIssuingAuthority": null,
+              "vesselSizeSegment": "Feeder",
+              "vesselCategory": "Container",
+              "vesselType": "Container",
+              "vesselSubtype": "Container Ship"
+            },
+            "hull": {
+              "yearOfBuild": 1997,
+              "yardNumber": "45",
+              "hullMaterial": "Steel",
+              "hullMaterialDetailed": null,
+              "hullType": "Single Hull",
+              "decks": null,
+              "shipYardOfBuild": null,
+              "countryOfBuild": "Republic of Korea",
+              "orderDate": "1996-08-01",
+              "orderPrice": null,
+              "keelLaidDate": "1997-06-02",
+              "builtDate": "1997-11-12",
+              "launchDate": "1997-09-11",
+              "deadDate": null,
+              "iceClass": null
+            },
+            "aisTransceiver": {
+              "lengthFore": 113,
+              "lengthAft": 27.06,
+              "widthLeft": 10,
+              "widthRight": 10.5,
+              "aisTransceiverClass": "Class A"
+            },
+            "dimension": {
+              "lengthOverall": 140.06,
+              "lengthBetweenPerpendiculars": 132,
+              "breadthExtreme": 20.5,
+              "breadthMoulded": 20.5,
+              "draught": 7.36,
+              "depth": 10.5,
+              "freeboard": 3166,
+              "maxDraught": 7.36
+            },
+            "tonnage": {
+              "grossTonnage": 8299,
+              "deadweightTonnage": 10299,
+              "netTonnage": 3752,
+              "loadedDisplacementTonnage": null,
+              "lightDisplacementTonnage": null,
+              "tpc": null,
+              "reducedGrossTonnage": null,
+              "netTonnageSuez": null,
+              "netTonnagePanama": null
+            },
+            "capacity": {
+              "liquidCapacity": null,
+              "gasCapacity": null,
+              "baleCapacity": null,
+              "grainCapacity": null,
+              "teuCapacity": 653,
+              "ceuCapacity": null,
+              "passengerCapacity": null,
+              "ballastCapacity": 4548,
+              "oreCapacity": null,
+              "fishHoldCapacity": null,
+              "teu14Capacity": null
+            },
+            "engine": {
+              "enginePower": 6655,
+              "engineUnits": 1,
+              "engineCylinderUnits": 5,
+              "engineBore": 500,
+              "engineStroke": 1620,
+              "engineRpm": 148,
+              "engineType": "Diesel Engine",
+              "speedService": 17.6,
+              "propeller": "Fixed Pitch Propeller",
+              "engineModel": "5L50MC",
+              "auxEngines": null,
+              "specificFuelConsumption": null,
+              "propellerType": "Fixed Pitch Propeller",
+              "propellers": 1
+            },
+            "fuel": {
+              "mainEngineFuelType": "Marine Diesel Oil",
+              "fuelCapacity": 650,
+              "engineFuelType1": "Marine Diesel Oil",
+              "engineFuelType2": null,
+              "engineFuelType3": null,
+              "engineFuelTankCapacity1": 650,
+              "engineFuelTankCapacity2": null,
+              "engineFuelTankCapacity3": null,
+              "ammoniaReady": false,
+              "lngReady": false,
+              "methanolReady": false
+            },
+            "cargoTankSystem": {
+              "cargoTanks": null,
+              "boilOffRate": null,
+              "coatingType": null,
+              "coatingDetails": null,
+              "imoCoatings": null,
+              "gasCargoContainmentType": null,
+              "gasCargoContainmentSystem": null,
+              "tankMaxPressure": null,
+              "tankMinTemperature": null
+            },
+            "cargoHandling": {
+              "swlOfCranes": null,
+              "numberOfCranes": null,
+              "numberOfHatches": 7,
+              "numberOfHolds": null,
+              "numberOfReeferPlugs": null,
+              "fishingGearType": null,
+              "grabsFitted": false
+            },
+            "environmental": {
+              "scrubberType": null,
+              "scrubberFittingDate": null,
+              "ballastWaterTreatmentFitted": true
+            },
+            "surveyMaintenance": {
+              "lastDryDock": null,
+              "lastRenewalSurvey": null
+            }
+          }
+        },
+        {
+          "identifier": {
+            "imo": 9294848,
+            "mmsi": 563382000,
+            "callSign": "S6AS7",
+            "eni": null,
+            "shipId": 726294,
+            "uscgOfficialNumber": null,
+            "hin": null,
+            "fishingRegistrationNumber": null
+          },
+          "management": {
+            "beneficialOwner": {
+              "current": {
+                "name": "WAN HAI LINES LTD",
+                "country": "TAIWAN",
+                "address": "10th Floor, 136, Songjiang Road, Zhongshan District, Taipei City, 10417, China, Republic of (Taiwan)",
+                "website": "http://web.wanhai.com/index_whl.jsp?web=whlww",
+                "email": "Dataprotection@wanhai.com",
+                "startDate": "2022-12-14",
+                "endDate": null
+              }
+            },
+            "registeredOwner": {
+              "current": {
+                "name": "WAN HAI LINES SINGAPORE PTE",
+                "country": "SINGAPORE",
+                "address": "10-01, 79, Anson Road, Singapore 079906",
+                "website": "https://www.wanhai.com/",
+                "email": "adm_dept@wanhai.com",
+                "startDate": "2024-11-13",
+                "endDate": null
+              }
+            },
+            "commercialManager": {
+              "current": {
+                "name": "WAN HAI LINES SINGAPORE PTE",
+                "country": "SINGAPORE",
+                "address": "10-01, 79, Anson Road, Singapore 079906",
+                "website": "https://www.wanhai.com/",
+                "email": "adm_dept@wanhai.com",
+                "startDate": "2023-06-10",
+                "endDate": null
+              }
+            },
+            "operator": {
+              "current": {
+                "name": "WAN HAI LINES LTD",
+                "country": "TAIWAN",
+                "address": "10th Floor, 136, Songjiang Road, Zhongshan District, Taipei City, 10417, China, Republic of (Taiwan)",
+                "website": "http://web.wanhai.com/index_whl.jsp?web=whlww",
+                "email": "Dataprotection@wanhai.com",
+                "startDate": "2022-12-14",
+                "endDate": null
+              }
+            },
+            "technicalManager": {
+              "current": {
+                "name": "WAN HAI LINES SINGAPORE PTE",
+                "country": "SINGAPORE",
+                "address": "10-01, 79, Anson Road, Singapore 079906",
+                "website": "https://www.wanhai.com/",
+                "email": "adm_dept@wanhai.com",
+                "startDate": "2023-06-10",
+                "endDate": null
+              }
+            },
+            "ismManager": {
+              "current": {
+                "name": "WAN HAI LINES SINGAPORE PTE",
+                "country": "SINGAPORE",
+                "address": "10-01, 79, Anson Road, Singapore 079906",
+                "website": "https://www.wanhai.com/",
+                "email": "adm_dept@wanhai.com",
+                "startDate": "2023-06-10",
+                "endDate": null
+              }
+            }
+          },
+          "associatedCompanies": {
+            "shipBuilder": {
+              "current": {
+                "name": "CSBC",
+                "country": "TAIWAN",
+                "address": "3 JHONGGANG ROAD",
+                "website": "http://www.csbcnet.com.tw",
+                "email": "1588@kao.csbcnet.com.tw",
+                "startDate": null,
+                "endDate": null
+              }
+            },
+            "engineBuilder": {
+              "current": {
+                "name": "HD HYUNDAI HEAVY INDUSTRIES CO LTD",
+                "country": "REPUBLIC OF KOREA",
+                "address": "1000, Bangeojinsumhwan-doro, Dong-gu",
+                "website": "https://www.hyundai-engine.com/en/",
+                "email": "enginesales@hhi.co.kr",
+                "startDate": null,
+                "endDate": null
+              }
+            },
+            "classificationSociety": {
+              "current": {
+                "name": "DNV GROUP",
+                "country": "NORWAY",
+                "address": "Veritasveien 1, 1363 Hovik, Norway",
+                "website": "https://www.dnv.com/",
+                "email": null,
+                "startDate": "2015-01-10",
+                "endDate": null
+              }
+            },
+            "piClub": {
+              "current": {
+                "name": "GARD P&I",
+                "country": "NORWAY",
+                "address": "Kittelsbuktveien 31, 4836 Arendal, Norway",
+                "website": "http://www.gard.no/",
+                "email": "companymail@gard.no",
+                "startDate": "2024-04-19",
+                "endDate": null
+              }
+            }
+          },
+          "ownership": {
+            "ultimateBeneficialOwner": [],
+            "beneficialOwner": {
+              "current": {
+                "name": "WAN HAI LINES LTD",
+                "country": "TAIWAN",
+                "address": "10th Floor, 136, Songjiang Road, Zhongshan District, Taipei City, 10417, China, Republic of (Taiwan)",
+                "website": "http://web.wanhai.com/index_whl.jsp?web=whlww",
+                "email": "Dataprotection@wanhai.com",
+                "startDate": "2022-12-14",
+                "endDate": null
+              }
+            },
+            "registeredOwner": {
+              "current": {
+                "name": "WAN HAI LINES SINGAPORE PTE",
+                "country": "SINGAPORE",
+                "address": "10-01, 79, Anson Road, Singapore 079906",
+                "website": "https://www.wanhai.com/",
+                "email": "adm_dept@wanhai.com",
+                "startDate": "2024-11-13",
+                "endDate": null
+              }
+            }
+          },
+          "commercial": {
+            "disponentOwner": {
+              "current": {
+                "name": "WAN HAI LINES SINGAPORE PTE",
+                "country": "SINGAPORE",
+                "address": "10-01, 79, Anson Road, Singapore 079906",
+                "website": "https://www.wanhai.com/",
+                "email": "adm_dept@wanhai.com",
+                "startDate": "2023-06-10",
+                "endDate": null
+              }
+            },
+            "commercialOperator": {
+              "current": {
+                "name": "WAN HAI LINES LTD",
+                "country": "TAIWAN",
+                "address": "10th Floor, 136, Songjiang Road, Zhongshan District, Taipei City, 10417, China, Republic of (Taiwan)",
+                "website": "http://web.wanhai.com/index_whl.jsp?web=whlww",
+                "email": "Dataprotection@wanhai.com",
+                "startDate": "2022-12-14",
+                "endDate": null
+              }
+            }
+          },
+          "particulars": {
+            "general": {
+              "name": "WAN HAI 501",
+              "commercialFleet": "CONTAINER SHIPS",
+              "generalVesselType": "CONTAINER SHIP",
+              "detailedVesselType": "CONTAINER SHIP",
+              "serviceStatus": "In Service",
+              "subServiceStatus": null,
+              "flag": "Singapore",
+              "portOfRegistry": "Singapore",
+              "keelLaidDate": "2004-11-30",
+              "fishingLicenseIssuingAuthority": null,
+              "vesselSizeSegment": "Panamax",
+              "vesselCategory": "Container",
+              "vesselType": "Container",
+              "vesselSubtype": "Container Ship"
+            },
+            "hull": {
+              "yearOfBuild": 2005,
+              "yardNumber": "835",
+              "hullMaterial": "Steel",
+              "hullMaterialDetailed": null,
+              "hullType": "Single Hull",
+              "decks": "1",
+              "shipYardOfBuild": null,
+              "countryOfBuild": "Taiwan",
+              "orderDate": "2003-04-01",
+              "orderPrice": 43.5,
+              "keelLaidDate": "2004-11-30",
+              "builtDate": "2005-07-22",
+              "launchDate": "2005-04-23",
+              "deadDate": null,
+              "iceClass": null
+            },
+            "aisTransceiver": {
+              "lengthFore": 207,
+              "lengthAft": 61.8,
+              "widthLeft": 20,
+              "widthRight": 12.3,
+              "aisTransceiverClass": "Class A"
+            },
+            "dimension": {
+              "lengthOverall": 268.8,
+              "lengthBetweenPerpendiculars": 256.5,
+              "breadthExtreme": 32.3,
+              "breadthMoulded": 32.2,
+              "draught": 12.54,
+              "depth": 19.2,
+              "freeboard": 6700,
+              "maxDraught": 12.54
+            },
+            "tonnage": {
+              "grossTonnage": 42532,
+              "deadweightTonnage": 52249,
+              "netTonnage": 19125,
+              "loadedDisplacementTonnage": null,
+              "lightDisplacementTonnage": null,
+              "tpc": null,
+              "reducedGrossTonnage": null,
+              "netTonnageSuez": null,
+              "netTonnagePanama": null
+            },
+            "capacity": {
+              "liquidCapacity": null,
+              "gasCapacity": null,
+              "baleCapacity": null,
+              "grainCapacity": null,
+              "teuCapacity": 4252,
+              "ceuCapacity": null,
+              "passengerCapacity": null,
+              "ballastCapacity": 13008,
+              "oreCapacity": null,
+              "fishHoldCapacity": null,
+              "teu14Capacity": null
+            },
+            "engine": {
+              "enginePower": 36540,
+              "engineUnits": 1,
+              "engineCylinderUnits": 8,
+              "engineBore": 900,
+              "engineStroke": 900,
+              "engineRpm": 104,
+              "engineType": "Diesel Engine",
+              "speedService": 23.3,
+              "propeller": "Fixed Pitch Propeller",
+              "engineModel": "8K90MC-C",
+              "auxEngines": 4,
+              "specificFuelConsumption": 161,
+              "propellerType": "Fixed Pitch Propeller",
+              "propellers": 1
+            },
+            "fuel": {
+              "mainEngineFuelType": "Marine Diesel Oil",
+              "fuelCapacity": null,
+              "engineFuelType1": "Marine Diesel Oil",
+              "engineFuelType2": null,
+              "engineFuelType3": null,
+              "engineFuelTankCapacity1": null,
+              "engineFuelTankCapacity2": null,
+              "engineFuelTankCapacity3": null,
+              "ammoniaReady": false,
+              "lngReady": false,
+              "methanolReady": false
+            },
+            "cargoTankSystem": {
+              "cargoTanks": null,
+              "boilOffRate": null,
+              "coatingType": null,
+              "coatingDetails": null,
+              "imoCoatings": null,
+              "gasCargoContainmentType": null,
+              "gasCargoContainmentSystem": null,
+              "tankMaxPressure": null,
+              "tankMinTemperature": null
+            },
+            "cargoHandling": {
+              "swlOfCranes": null,
+              "numberOfCranes": null,
+              "numberOfHatches": 0,
+              "numberOfHolds": null,
+              "numberOfReeferPlugs": null,
+              "fishingGearType": null,
+              "grabsFitted": false
+            },
+            "environmental": {
+              "scrubberType": null,
+              "scrubberFittingDate": null,
+              "ballastWaterTreatmentFitted": true
+            },
+            "surveyMaintenance": {
+              "lastDryDock": null,
+              "lastRenewalSurvey": null
+            }
+          }
+        }
+      ],
+      "pageInfo": {
+        "hasNextPage": false,
+        "endCursor": null
+      }
+    }
+  }
+}

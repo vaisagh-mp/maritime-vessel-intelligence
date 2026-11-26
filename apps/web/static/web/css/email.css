@@ -1,0 +1,48 @@
+/* Email templates and Email log pages */
+.email-banner { margin: 0 0 var(--space-16); padding: var(--space-8) var(--space-12); font-size: 0.875rem; border-radius: var(--radius-sm);
+    background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text-muted); }
+.email-banner[hidden] { display: none; }
+
+.tpl-manage-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: var(--space-16); }
+.tpl-manage-card { display: flex; flex-direction: column; gap: var(--space-8); padding: var(--space-16); background: var(--color-surface);
+    border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); }
+.tpl-manage-card.is-off { opacity: 0.75; }
+.tpl-card-top { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-8); }
+.tpl-manage-name { margin: 0; font-size: 1.0625rem; flex: 1 1 auto; }
+.tpl-manage-subject { margin: 0; font-size: 0.875rem; }
+.tpl-manage-body { margin: 0; padding: var(--space-12); max-height: 180px; overflow: auto; white-space: pre-wrap; word-break: break-word; font: inherit; font-size: 0.8125rem;
+    background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-md); color: var(--color-text); }
+.tpl-manage-foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--space-8); margin-top: auto; font-size: 0.8125rem; }
+.tpl-manage-actions { display: flex; gap: var(--space-8); }
+
+.tpl-kind { flex: none; padding: 2px 8px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; border: 1px solid var(--band-low-border); background: var(--band-low-bg); color: var(--band-low-text); }
+.tpl-kind-first_contact { border-color: var(--band-medium-border); background: var(--band-medium-bg); color: var(--band-medium-text); }
+.tpl-kind-reminder { border-color: var(--band-high-border); background: var(--band-high-bg); color: var(--band-high-text); }
+.tpl-kind-off { border-color: var(--color-danger-border); background: var(--color-danger-bg); color: var(--color-danger); }
+
+.tpl-dialog { width: min(720px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow: auto; margin: auto; padding: 0; color: var(--color-text);
+    background-color: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-dialog); }
+.tpl-dialog::backdrop { background: var(--dialog-backdrop); }
+.tpl-dialog .modal-form { display: flex; flex-direction: column; gap: var(--space-16); padding: var(--space-24); }
+.tpl-dialog .modal-title { font-size: var(--font-xl); margin: 0; }
+.tpl-dialog .modal-actions { display: flex; justify-content: flex-end; gap: var(--space-8); }
+.tpl-dialog .form-error:empty { display: none; }
+.email-body { min-height: 220px; font-family: inherit; line-height: 1.45; resize: vertical; }
+.email-chips { display: flex; flex-wrap: wrap; gap: var(--space-4); margin-top: var(--space-4); }
+.email-chip { padding: 2px 8px; font: inherit; font-size: 0.75rem; cursor: pointer; color: var(--color-accent); background: var(--color-surface);
+    border: 1px solid var(--color-accent); border-radius: 999px; }
+.email-chip:hover { background: var(--color-bg); }
+.email-chip:focus-visible { outline: 2px solid var(--color-focus-outline); outline-offset: 2px; }
+.email-hint { margin: var(--space-4) 0 0; font-size: 0.8125rem; color: var(--band-medium-text); }
+.email-hint:empty { display: none; }
+.email-inline { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-16); }
+.email-check { display: inline-flex; align-items: center; gap: var(--space-8); font-size: 0.9375rem; }
+
+.log-pager { display: flex; align-items: center; gap: var(--space-8); margin-top: var(--space-12); }
+.log-detail td { background: var(--color-bg); }
+.log-body { margin: 0; white-space: pre-wrap; word-break: break-word; font: inherit; font-size: 0.875rem; color: var(--color-text); }
+.log-status { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; border: 1px solid var(--band-low-border); background: var(--band-low-bg); color: var(--band-low-text); }
+.log-status-ok { border-color: var(--color-success); background: var(--color-success-bg); color: var(--color-success); }
+.log-status-bad { border-color: var(--color-danger-border); background: var(--color-danger-bg); color: var(--color-danger); }
+.log-status-test { border-color: var(--band-medium-border); background: var(--band-medium-bg); color: var(--band-medium-text); }
+.owner-meta { color: var(--color-text-muted); font-size: 0.8125rem; word-break: break-word; }

@@ -1,0 +1,296 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+
+import {
+    defaultFilters,
+    activeFilterCount,
+    isDefault,
+    readFilters,
+    toQuery,
+    apiQueryForZone,
+    inboundLabel,
+    isEtaPassed,
+    exportQuery,
+    etaRelative,
+    etaSourceLabel,
+    summarise,
+    ZONES,
+    BOARD_COLUMNS,
+    zoneToColumn,
+} from "../board-logic.js";
+
+test("readFilters: parses valid query parameters", () => {
+    const search = "?port=290&band=HOT&stage=contacted&q=tanker&sort=eta&inbound=1&closed=1";
+    const filters = readFilters(search);
+
+    assert.equal(filters.port, "290");
+    assert.equal(filters.band, "HOT");
+    assert.equal(filters.stage, "contacted");
+    assert.equal(filters.q, "tanker");
+    assert.equal(filters.sort, "eta");
+    assert.equal(filters.inbound, true);
+    assert.equal(filters.closed, true);
+});
+
+test("readFilters: ignores invalid values and applies defaults", () => {
+    const search = "?port=invalid&band=UNKNOWN&stage=fake_stage&sort=invalid_sort&inbound=abc&closed=xyz";
+    const filters = readFilters(search);
+
+    assert.equal(filters.port, "");
+    assert.equal(filters.band, "");
+    assert.equal(filters.stage, "");
+    assert.equal(filters.q, "");
+    assert.equal(filters.sort, "-score");
+    assert.equal(filters.inbound, false);
+    assert.equal(filters.closed, false);
+});
+
+test("readFilters: handles empty or missing string", () => {
+    const filters = readFilters("");
+    assert.equal(filters.port, "");
+    assert.equal(filters.band, "");
+    assert.equal(filters.stage, "");
+    assert.equal(filters.q, "");
+    assert.equal(filters.sort, "-score");
+    assert.equal(filters.inbound, false);
+    assert.equal(filters.closed, false);
+});
+
+test("toQuery: serializes non-default filters to query string", () => {
+    const filters = {
+        port: "290",
+        band: "HIGH",
+        stage: "qualifying",
+        q: "pacific",
+        sort: "eta",
+        inbound: true,
+        closed: true,
+    };
+    const qs = toQuery(filters);
+    assert.ok(qs.startsWith("?"));
+    assert.ok(qs.includes("port=290"));
+    assert.ok(qs.includes("band=HIGH"));
+    assert.ok(qs.includes("stage=qualifying"));
+    assert.ok(qs.includes("q=pacific"));
+    assert.ok(qs.includes("sort=eta"));
+    assert.ok(qs.includes("inbound=1"));
+    assert.ok(qs.includes("closed=1"));
+});
+
+test("toQuery: omits default or empty values", () => {
+    const filters = {
+        port: "",
+        band: "",
+        stage: "",
+        q: "",
+        sort: "-score",
+        inbound: false,
+        closed: false,
+    };
+    assert.equal(toQuery(filters), "");
+});
+
+test("apiQueryForZone: includes zone, sets open=true unless closed is checked", () => {
+    // 1. When closed is false: sends open=true
+    const openQuery = apiQueryForZone({ inbound: true, sort: "-score" }, "24h");
+    assert.ok(openQuery.includes("zone=24h"));
+    assert.ok(openQuery.includes("open=true"));
+    assert.ok(openQuery.includes("is_inbound=true"));
+    assert.ok(openQuery.includes("ordering=-score"));
+
+    // 2. When closed is true: omits open=true
+    const closedQuery = apiQueryForZone({ closed: true }, "72h");
+    assert.ok(closedQuery.includes("zone=72h"));
+    assert.ok(!closedQuery.includes("open=true"));
+});
+
+test("exportQuery: produces query without zone or page", () => {
+    const filters = {
+        port: "790",
+        band: "HOT",
+        stage: "detected",
+        q: "alpha",
+        sort: "eta",
+        inbound: true,
+        closed: false,
+    };
+    const eq = exportQuery(filters);
+
+    assert.ok(!eq.includes("zone="));
+    assert.ok(!eq.includes("page="));
+    assert.ok(!eq.includes("page_size="));
+    assert.ok(eq.includes("open=true"));
+    assert.ok(eq.includes("is_inbound=true"));
+    assert.ok(eq.includes("port=790"));
+    assert.ok(eq.includes("band=HOT"));
+    assert.ok(eq.includes("ordering=eta"));
+});
+
+test("etaRelative: returns expected relative text", () => {
+    const now = 1700000000000;
+
+    // Past ETA
+    const past = new Date(now - 3600 * 1000).toISOString();
+    assert.equal(etaRelative(past, now), "ETA passed");
+
+    // Exact now
+    assert.equal(etaRelative(new Date(now).toISOString(), now), "ETA passed");
+
+    // Future hours (< 24h)
+    const in5h = new Date(now + 5 * 3600 * 1000).toISOString();
+    assert.equal(etaRelative(in5h, now), "in 5 h");
+
+    // Future days (>= 24h)
+    const in2d = new Date(now + 48 * 3600 * 1000).toISOString();
+    assert.equal(etaRelative(in2d, now), "in 2 d");
+
+    // Null or invalid
+    assert.equal(etaRelative(null, now), "No ETA");
+    assert.equal(etaRelative("", now), "No ETA");
+    assert.equal(etaRelative("invalid-date", now), "No ETA");
+});
+
+test("etaSourceLabel: converts source codes to words", () => {
+    assert.equal(etaSourceLabel("eta_calc"), "provider calculated");
+    assert.equal(etaSourceLabel("ais_eta"), "AIS declared");
+    assert.equal(etaSourceLabel(""), "");
+    assert.equal(etaSourceLabel(null), "");
+    assert.equal(etaSourceLabel("other"), "");
+});
+
+test("summarise: computes total, hot, and inbound counts", () => {
+    const items = [
+        { band: "HOT", is_inbound: true },
+        { band: "HIGH", is_inbound: true },
+        { band: "HOT", is_inbound: false },
+        { band: "LOW", is_inbound: false },
+    ];
+
+    const result = summarise(items);
+    assert.equal(result.total, 4);
+    assert.equal(result.hot, 2);
+    assert.equal(result.inbound, 2);
+
+    assert.deepEqual(summarise([]), { total: 0, hot: 0, inbound: 0 });
+    assert.deepEqual(summarise(null), { total: 0, hot: 0, inbound: 0 });
+});
+
+test("defaultFilters: returns clean default filter object", () => {
+    const f = defaultFilters();
+    assert.deepEqual(f, {
+        port: "",
+        band: "",
+        stage: "",
+        q: "",
+        sort: "-score",
+        inbound: false,
+        isNew: false,
+        closed: false,
+    });
+});
+
+test("activeFilterCount & isDefault: all defaults", () => {
+    const f = defaultFilters();
+    assert.equal(activeFilterCount(f), 0);
+    assert.equal(isDefault(f), true);
+    assert.equal(activeFilterCount(null), 0);
+    assert.equal(isDefault(null), true);
+    assert.equal(activeFilterCount(undefined), 0);
+    assert.equal(isDefault(undefined), true);
+});
+
+test("activeFilterCount & isDefault: single active filter variations", () => {
+    assert.equal(activeFilterCount({ ...defaultFilters(), port: "290" }), 1);
+    assert.equal(isDefault({ ...defaultFilters(), port: "290" }), false);
+
+    assert.equal(activeFilterCount({ ...defaultFilters(), band: "HOT" }), 1);
+    assert.equal(activeFilterCount({ ...defaultFilters(), stage: "contacted" }), 1);
+    assert.equal(activeFilterCount({ ...defaultFilters(), q: "tanker" }), 1);
+    assert.equal(activeFilterCount({ ...defaultFilters(), sort: "eta" }), 1);
+    assert.equal(activeFilterCount({ ...defaultFilters(), inbound: true }), 1);
+    assert.equal(activeFilterCount({ ...defaultFilters(), closed: true }), 1);
+});
+
+test("activeFilterCount & isDefault: several changes and counting rules", () => {
+    // several active
+    const multi = {
+        ...defaultFilters(),
+        port: "290",
+        band: "HOT",
+        sort: "eta",
+        inbound: true,
+    };
+    assert.equal(activeFilterCount(multi), 4);
+    assert.equal(isDefault(multi), false);
+
+    // sort at default "-score" does not count as active
+    assert.equal(activeFilterCount({ ...defaultFilters(), sort: "-score" }), 0);
+
+    // stage at default "" does not count as active
+    assert.equal(activeFilterCount({ ...defaultFilters(), stage: "" }), 0);
+
+    // search with only spaces is not active
+    assert.equal(activeFilterCount({ ...defaultFilters(), q: "   " }), 0);
+    assert.equal(isDefault({ ...defaultFilters(), q: "   " }), true);
+
+    // search with actual text is active
+    assert.equal(activeFilterCount({ ...defaultFilters(), q: "  tanker  " }), 1);
+});
+
+test("zones and board column mapping: anchorage_bound mapped to anchorage column", () => {
+    const zoneIds = ZONES.map((z) => z.id);
+    assert.ok(zoneIds.includes("anchorage_bound"));
+    assert.ok(zoneIds.includes("anchorage"));
+    assert.ok(zoneIds.includes("24h"));
+    assert.ok(zoneIds.includes("72h"));
+
+    assert.equal(BOARD_COLUMNS.length, 3);
+    assert.deepEqual(BOARD_COLUMNS.map((c) => c.id), ["24h", "72h", "anchorage"]);
+
+    assert.equal(zoneToColumn("anchorage_bound"), "anchorage");
+    assert.equal(zoneToColumn("anchorage"), "anchorage");
+    assert.equal(zoneToColumn("24h"), "24h");
+    assert.equal(zoneToColumn("72h"), "72h");
+});
+
+test("inboundLabel: an inbound lead whose ETA passed is unconfirmed", () => {
+    const now = Date.parse("2026-11-24T10:00:00Z");
+    assert.equal(inboundLabel({ is_inbound: true, eta: "2026-11-25T10:00:00Z" }, now), "Inbound");
+    assert.equal(inboundLabel({ is_inbound: true, eta: "2026-11-10T22:24:00Z" }, now), "Status unconfirmed");
+    assert.equal(inboundLabel({ is_inbound: true, eta: null }, now), "Inbound");
+    assert.equal(inboundLabel({ is_inbound: false, eta: "2026-11-10T22:24:00Z" }, now), "");
+    assert.equal(inboundLabel(null, now), "");
+    assert.equal(isEtaPassed("garbage", now), false);
+});
+
+test("apiQueryForZone: 24h and 72h hide stale leads, anchorage does not", () => {
+    assert.ok(apiQueryForZone({}, "24h").includes("hide_stale=true"));
+    assert.ok(apiQueryForZone({}, "72h").includes("hide_stale=true"));
+    assert.ok(!apiQueryForZone({}, "anchorage").includes("hide_stale"));
+    assert.ok(!apiQueryForZone({ closed: true }, "24h").includes("hide_stale"));
+});
+
+test("Inbound only also asks for upcoming ETAs, in the list and in the export", () => {
+    assert.ok(apiQueryForZone({ inbound: true }, "24h").includes("upcoming=true"));
+    assert.ok(exportQuery({ inbound: true }).includes("upcoming=true"));
+    assert.ok(!apiQueryForZone({}, "24h").includes("upcoming"));
+});
+
+
+import { apiQueryForZone as aq, exportQuery as eq } from "../board-logic.js";
+
+test("all-leads page: no zone filter, pipeline and new filters round trip", () => {
+    const f = readFilters("?stage=pipeline&new=1&band=HOT");
+    assert.equal(f.stage, "pipeline");
+    assert.equal(f.isNew, true);
+    assert.equal(activeFilterCount(f), 3);
+    assert.equal(toQuery(f), "?band=HOT&stage=pipeline&new=1");
+    const api = new URLSearchParams(aq(f, "all"));
+    assert.equal(api.has("zone"), false);
+    assert.equal(api.has("hide_stale"), false);
+    assert.equal(api.get("stage"), "pipeline");
+    assert.equal(api.get("new_hours"), "24");
+    assert.equal(api.get("open"), "true");
+    assert.equal(new URLSearchParams(aq(f, "24h")).get("zone"), "24h");
+    assert.equal(new URLSearchParams(eq(f)).get("new_hours"), "24");
+});

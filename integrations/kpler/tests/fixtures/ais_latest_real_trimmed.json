@@ -1,0 +1,185 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "id": "9519651",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     103.98332977,
+     1.29999995
+    ]
+   },
+   "geometry_name": "position",
+   "properties": {
+    "vesselUid": 9519651,
+    "mmsi": 563260500,
+    "imo": 1031355,
+    "longitude": 103.98332977294922,
+    "latitude": 1.2999999523162842,
+    "sog": 0,
+    "cog": 5,
+    "rot": 0,
+    "heading": 259,
+    "navStatus": 1,
+    "posMsgType": 27,
+    "posSrc": "SAT",
+    "vesselName": "OXALIS DAISY",
+    "callsign": "9V9187",
+    "flag": "SG",
+    "vesselTypeAis": 80,
+    "vesselType": "Oil Products Tanker",
+    "length": 109.91,
+    "width": 19,
+    "dwt": 7999,
+    "grt": 6011,
+    "destination": "AEP",
+    "eta": "2026-11-08T23:30:00Z",
+    "draught": 6.6,
+    "staticMsgType": 5,
+    "staticSrc": "TER",
+    "posDt": "2026-11-09T05:47:14Z",
+    "staticDt": "2026-11-09T05:45:17Z",
+    "insertDt": "2026-11-09T05:47:33Z"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "5429491",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     103.74065399,
+     1.27667165
+    ]
+   },
+   "geometry_name": "position",
+   "properties": {
+    "vesselUid": 5429491,
+    "mmsi": 423520100,
+    "imo": 9810513,
+    "longitude": 103.74065399169922,
+    "latitude": 1.2766716480255127,
+    "sog": 0.1,
+    "cog": 214,
+    "rot": 0,
+    "heading": 312,
+    "navStatus": 5,
+    "posMsgType": 3,
+    "posSrc": "TER",
+    "vesselName": "KARABAKH",
+    "callsign": "4JUC",
+    "flag": "AZ",
+    "vesselTypeAis": 89,
+    "vesselType": "Crude Oil Tanker",
+    "length": 250,
+    "width": 44,
+    "dwt": 114667,
+    "grt": 63487,
+    "destination": "SPORE",
+    "eta": "2026-11-04T10:00:00Z",
+    "draught": 13.8,
+    "staticMsgType": 5,
+    "staticSrc": "TER",
+    "posDt": "2026-11-09T05:47:35Z",
+    "staticDt": "2026-11-09T05:44:40Z",
+    "insertDt": "2026-11-09T05:47:37Z"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "9150388",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     103.99157715,
+     1.29038
+    ]
+   },
+   "geometry_name": "position",
+   "properties": {
+    "vesselUid": 9150388,
+    "mmsi": 457617000,
+    "imo": null,
+    "longitude": 103.9915771484375,
+    "latitude": 1.2903800010681152,
+    "sog": 0.2,
+    "cog": 0,
+    "rot": 0,
+    "heading": 0,
+    "navStatus": 15,
+    "posMsgType": 3,
+    "posSrc": "ROAM",
+    "vesselName": "JOLLY ROSLEE",
+    "callsign": "JVRN8",
+    "flag": "MN",
+    "vesselTypeAis": 70,
+    "vesselType": "Cargo",
+    "length": 18,
+    "width": 6,
+    "dwt": null,
+    "grt": null,
+    "destination": null,
+    "eta": null,
+    "draught": 0,
+    "staticMsgType": 19,
+    "staticSrc": "TER",
+    "posDt": "2026-11-09T05:39:46Z",
+    "staticDt": "2026-11-09T05:09:43Z",
+    "insertDt": "2026-11-09T05:42:08Z"
+   }
+  },
+  {
+   "type": "Feature",
+   "id": "10861175",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     103.82118225,
+     1.18464828
+    ]
+   },
+   "geometry_name": "position",
+   "properties": {
+    "vesselUid": 10861175,
+    "mmsi": 538012650,
+    "imo": 1058561,
+    "longitude": 103.82118225097656,
+    "latitude": 1.1846482753753662,
+    "sog": 8.5,
+    "cog": 251,
+    "rot": 0,
+    "heading": 252,
+    "navStatus": 0,
+    "posMsgType": 1,
+    "posSrc": "TER",
+    "vesselName": "ATLANTIC CHALLENGER",
+    "callsign": "V7B3153",
+    "flag": "MH",
+    "vesselTypeAis": 80,
+    "vesselType": "Oil/Chemical Tanker",
+    "length": 183,
+    "width": 32,
+    "dwt": 50000,
+    "grt": 29500,
+    "destination": "SGSIN",
+    "eta": "2026-11-09T07:00:00Z",
+    "draught": 13,
+    "staticMsgType": 5,
+    "staticSrc": "TER",
+    "posDt": "2026-11-09T05:47:23Z",
+    "staticDt": "2026-11-09T05:43:04Z",
+    "insertDt": "2026-11-09T05:47:26Z"
+   }
+  }
+ ],
+ "numberMatched": 4,
+ "timeStamp": "2026-11-09T05:47:44.842Z",
+ "crs": {
+  "type": "name",
+  "properties": {
+   "name": "urn:ogc:def:crs:EPSG::4326"
+  }
+ }
+}

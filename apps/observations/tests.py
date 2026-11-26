@@ -1,3 +1,4 @@
+from django.db import IntegrityError
 from django.test import TestCase
 from django.utils import timezone
 
@@ -12,17 +13,29 @@ class VesselObservationTests(TestCase):
 
     def test_append_only_two_polls_create_two_rows(self):
         VesselObservation.objects.create(
-            vessel=self.vessel, timestamp=timezone.now(), latitude=1.0, longitude=1.0
+            vessel=self.vessel, timestamp=timezone.now(), latitude=1.0, longitude=1.0, source="test-source"
         )
         VesselObservation.objects.create(
-            vessel=self.vessel, timestamp=timezone.now(), latitude=1.1, longitude=1.1
+            vessel=self.vessel, timestamp=timezone.now(), latitude=1.1, longitude=1.1, source="test-source"
         )
         self.assertEqual(VesselObservation.objects.filter(vessel=self.vessel).count(), 2)
 
     def test_update_is_rejected(self):
         obs = VesselObservation.objects.create(
-            vessel=self.vessel, timestamp=timezone.now(), latitude=1.0, longitude=1.0
+            vessel=self.vessel, timestamp=timezone.now(), latitude=1.0, longitude=1.0, source="test-source"
         )
         obs.latitude = 2.0
         with self.assertRaises(ValueError):
             obs.save()
+
+    def test_default_port_area_is_unknown(self):
+        obs = VesselObservation.objects.create(
+            vessel=self.vessel, timestamp=timezone.now(), latitude=1.0, longitude=1.0, source="test-source"
+        )
+        self.assertEqual(obs.port_area, "unknown")
+
+    def test_observation_without_source_raises_error(self):
+        with self.assertRaises(IntegrityError):
+            VesselObservation.objects.create(
+                vessel=self.vessel, timestamp=timezone.now(), latitude=1.0, longitude=1.0, source=None
+            )

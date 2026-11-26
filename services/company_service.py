@@ -9,8 +9,6 @@ from apps.common.constants import (
 from apps.companies.models import Company
 from apps.relationships.models import VesselRelationship
 
-SOURCE = "datadocked.com"
-
 
 def _match_or_create_company(name, company_type, email=None, website=None, address=None):
     existing = Company.objects.filter(name__iexact=name).first()
@@ -25,10 +23,10 @@ def _match_or_create_company(name, company_type, email=None, website=None, addre
     )
 
 
-def apply_management_data(vessel, management: dict):
+def apply_management_data(vessel, management: dict, source: str):
     """Creates/links the manager and (if present and not a "-") the
     registered owner, via unverified VesselRelationship rows sourced from the
-    public registry data — never treated as a confirmed named decision-maker.
+    data provider — never treated as a confirmed named decision-maker.
     """
     created_relationships = []
 
@@ -42,7 +40,7 @@ def apply_management_data(vessel, management: dict):
         )
         rel, _ = VesselRelationship.objects.get_or_create(
             vessel=vessel, company=manager, role=RELATIONSHIP_ROLE_MANAGER,
-            defaults={"source": SOURCE, "verified": False},
+            defaults={"source": source, "verified": False},
         )
         created_relationships.append(rel)
 
@@ -56,7 +54,7 @@ def apply_management_data(vessel, management: dict):
         )
         rel, _ = VesselRelationship.objects.get_or_create(
             vessel=vessel, company=owner, role=RELATIONSHIP_ROLE_OWNER,
-            defaults={"source": SOURCE, "verified": False},
+            defaults={"source": source, "verified": False},
         )
         created_relationships.append(rel)
 

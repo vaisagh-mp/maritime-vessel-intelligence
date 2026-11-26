@@ -1,0 +1,522 @@
+/**
+ * apps/web/static/web/css/vessel.css
+ * Styling for Vessel Detail page.
+ * Uses tokens only from tokens.css; WCAG AA contrast (>4.5:1) in light & dark modes.
+ * Responsive: 2 columns from 900px, 1 column below; no horizontal scrolling at 360px.
+ */
+
+
+
+/* 1. Header Card */
+.vessel-header {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-24);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-16);
+}
+
+.vessel-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-12);
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-8);
+    font-size: var(--font-sm);
+    font-weight: 500;
+    color: var(--color-accent);
+    text-decoration: none;
+}
+
+.back-link:hover,
+.back-link:focus-visible {
+    color: var(--color-accent-hover);
+    text-decoration: underline;
+}
+
+.vessel-header-main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+}
+
+.vessel-title {
+    font-size: var(--font-3xl);
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--color-text);
+    word-break: break-word;
+}
+
+.vessel-subtitle {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-16);
+    font-size: var(--font-sm);
+    color: var(--color-text-muted);
+}
+
+.sub-item strong {
+    color: var(--color-text);
+    font-weight: 600;
+}
+
+/* Header Opportunity Badge */
+.header-lead-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-8);
+    padding: var(--space-4) var(--space-12);
+    border-radius: var(--radius-md);
+    font-size: var(--font-sm);
+    font-weight: 600;
+    border: 1px solid transparent;
+}
+
+.header-lead-badge.band-hot {
+    background-color: var(--band-hot-bg);
+    color: var(--band-hot-text);
+    border-color: var(--band-hot-border);
+}
+
+.header-lead-badge.band-high {
+    background-color: var(--band-high-bg);
+    color: var(--band-high-text);
+    border-color: var(--band-high-border);
+}
+
+.header-lead-badge.band-medium {
+    background-color: var(--band-medium-bg);
+    color: var(--band-medium-text);
+    border-color: var(--band-medium-border);
+}
+
+.header-lead-badge.band-low {
+    background-color: var(--band-low-bg);
+    color: var(--band-low-text);
+    border-color: var(--band-low-border);
+}
+
+/* Grid Layout: 2 columns >= 900px, 1 column < 900px */
+.vessel-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--section-gap);
+}
+
+@media (min-width: 900px) {
+    .vessel-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .card-full-width {
+        grid-column: 1 / -1;
+    }
+}
+
+/* Definition lists for Particulars & Latest Position */
+.data-dl {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-12);
+}
+
+@media (min-width: 480px) {
+    .data-dl {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.dl-row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    min-width: 0;
+}
+
+.dl-row dt {
+    font-size: var(--font-xs);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
+}
+
+.dl-row dd {
+    font-size: var(--font-sm);
+    font-weight: 500;
+    color: var(--color-text);
+    word-break: break-word;
+}
+
+/* External Link Note */
+.external-link-wrap {
+    margin-top: var(--space-16);
+    padding-top: var(--space-12);
+    border-top: 1px dashed var(--color-border);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.external-note {
+    font-size: var(--font-xs);
+    color: var(--color-text-muted);
+}
+
+/* Stale position indicator */
+.stale-warning {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-8);
+    margin-top: var(--space-12);
+    padding: var(--space-8) var(--space-12);
+    border-radius: var(--radius-md);
+    font-size: var(--font-sm);
+    font-weight: 600;
+    background-color: var(--band-high-bg);
+    color: var(--band-high-text);
+    border: 1px solid var(--band-high-border);
+}
+
+.stale-badge {
+    text-transform: uppercase;
+    font-size: var(--font-xs);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    background-color: var(--band-high-text);
+    color: var(--band-high-bg);
+}
+
+/* Tables Responsive Wrappers (no horizontal overflow on mobile) */
+.vessel-table-wrap {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.vessel-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-sm);
+    text-align: left;
+    white-space: nowrap;
+}
+
+.vessel-table th {
+    background-color: var(--color-bg);
+    color: var(--color-text-muted);
+    font-size: var(--font-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: var(--space-12);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.vessel-table td {
+    padding: var(--space-12);
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-text);
+}
+
+.vessel-table td.cell-lead-reason {
+    white-space: normal;
+    max-width: 280px;
+    min-width: 180px;
+}
+
+.lead-reason-clamp {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.vessel-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.vessel-table tbody tr:hover {
+    background-color: var(--color-bg);
+}
+
+/* Band Badges in Table */
+.table-badge {
+    display: inline-block;
+    padding: 2px var(--space-8);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-xs);
+    font-weight: 600;
+    border: 1px solid transparent;
+}
+
+.table-badge.band-hot {
+    background-color: var(--band-hot-bg);
+    color: var(--band-hot-text);
+    border-color: var(--band-hot-border);
+}
+
+.table-badge.band-high {
+    background-color: var(--band-high-bg);
+    color: var(--band-high-text);
+    border-color: var(--band-high-border);
+}
+
+.table-badge.band-medium {
+    background-color: var(--band-medium-bg);
+    color: var(--band-medium-text);
+    border-color: var(--band-medium-border);
+}
+
+.table-badge.band-low {
+    background-color: var(--band-low-bg);
+    color: var(--band-low-text);
+    border-color: var(--band-low-border);
+}
+
+/* Contacts / Roles in Owners & Managers Card */
+.contacts-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-16);
+}
+
+.contact-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+}
+
+.contact-role-title {
+    font-size: var(--font-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-4);
+}
+
+.contact-entry {
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-12);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+}
+
+.contact-entry-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: var(--space-8);
+}
+
+.contact-name {
+    font-size: var(--font-base);
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.contact-verification-badge {
+    font-size: var(--font-xs);
+    font-weight: 600;
+    padding: 2px var(--space-8);
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+}
+
+.contact-verification-badge.verified {
+    background-color: var(--color-success-bg);
+    color: var(--color-success);
+    border-color: var(--color-success);
+}
+
+.contact-verification-badge.unverified {
+    background-color: var(--color-bg);
+    color: var(--color-text-muted);
+    border-color: var(--color-border);
+}
+
+.contact-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-16);
+    font-size: var(--font-sm);
+    color: var(--color-text-muted);
+}
+
+.contact-details span strong {
+    color: var(--color-text);
+}
+
+/* Load more container */
+.load-more-row {
+    margin-top: var(--space-16);
+    display: flex;
+    justify-content: center;
+}
+
+.btn-load-more {
+    background-color: var(--color-bg);
+    color: var(--color-accent);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-8) var(--space-16);
+    font-size: var(--font-sm);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-load-more:hover,
+.btn-load-more:focus-visible {
+    background-color: var(--color-surface);
+    border-color: var(--color-accent);
+}
+
+/* State indicators (Loading, Empty, Error) */
+.loading-state {
+    padding: var(--space-24);
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: var(--font-sm);
+}
+
+
+
+/* ---------- Confirming an owner or manager link ---------- */
+
+.contact-verified {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    font-size: var(--font-sm);
+    color: var(--color-text-muted);
+}
+
+.contact-verified-line {
+    color: var(--color-success);
+    font-weight: 600;
+}
+
+.contact-verified-note {
+    font-style: italic;
+}
+
+.contact-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-8);
+}
+
+.verify-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+    width: 100%;
+    max-width: 520px;
+}
+
+.verify-form[hidden] {
+    display: none;
+}
+
+.verify-label {
+    font-size: var(--font-xs);
+    font-weight: 600;
+    color: var(--color-text-muted);
+}
+
+.verify-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-8);
+}
+
+.contact-actions .form-error {
+    font-size: var(--font-sm);
+    color: var(--color-danger);
+    background-color: var(--color-danger-bg);
+    border: 1px solid var(--color-danger);
+    padding: var(--space-4) var(--space-12);
+    border-radius: var(--radius-md);
+}
+
+.contact-actions .form-error:empty {
+    display: none;
+}
+
+.contact-actions .btn[hidden] {
+    display: none;
+}
+
+.lookup-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-8);
+    margin-top: var(--space-12);
+}
+
+.lookup-note {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+}
+
+/* ---------- Send mail ---------- */
+.mail-controls { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-8); margin-top: var(--space-8); }
+.mail-last, .mail-note { color: var(--color-text-muted); font-size: 0.8125rem; }
+.mail-dialog { width: min(640px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow: auto; margin: auto; padding: 0; color: var(--color-text);
+    background-color: var(--color-surface); border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg); box-shadow: var(--shadow-dialog); }
+.mail-dialog::backdrop { background: var(--dialog-backdrop); }
+.mail-dialog .modal-form { display: flex; flex-direction: column; gap: var(--space-16); padding: var(--space-24); }
+.mail-dialog .modal-title { font-size: var(--font-xl); margin: 0; }
+.mail-dialog .modal-actions { display: flex; justify-content: flex-end; gap: var(--space-8); }
+.mail-dialog .form-error:empty { display: none; }
+.mail-body { min-height: 220px; font-family: inherit; line-height: 1.45; resize: vertical; }
+.mail-banner { margin: 0; padding: var(--space-8) var(--space-12); font-size: 0.875rem; border-radius: var(--radius-sm);
+    background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text-muted); }
+.mail-warning { margin: 0 0 var(--space-8); padding: var(--space-8) var(--space-12); font-size: 0.875rem;
+    border-radius: var(--radius-sm); border: 1px solid var(--color-border); border-left: 4px solid var(--band-medium-border); background: var(--band-medium-bg); color: var(--band-medium-text); }
+.mail-notes:empty { display: none; }
+
+/* Send mail: header and template picker */
+.mail-head { display: flex; align-items: center; gap: var(--space-12); padding-bottom: var(--space-12); border-bottom: 1px solid var(--color-border); }
+.mail-head-icon { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; flex: none; border-radius: 50%;
+    background: var(--color-accent); color: var(--color-btn-primary-text); font-size: 1.25rem; }
+.mail-head-sub { margin: 2px 0 0; color: var(--color-text-muted); font-size: 0.875rem; }
+.tpl-picker { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--space-8); }
+.tpl-card { display: flex; flex-direction: column; gap: var(--space-4); text-align: left; padding: var(--space-12); cursor: pointer; font: inherit; color: var(--color-text);
+    background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-card); }
+.tpl-card:hover { box-shadow: var(--shadow-card-hover); }
+.tpl-card:focus-visible { outline: 2px solid var(--color-focus-outline); outline-offset: 2px; }
+.tpl-card[aria-checked="true"] { border-color: var(--color-accent); box-shadow: 0 0 0 3px var(--color-focus-ring); background: var(--color-bg); }
+.tpl-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-8); }
+.tpl-name { font-weight: 600; font-size: 0.9375rem; }
+.tpl-subject { color: var(--color-text-muted); font-size: 0.8125rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tpl-kind { flex: none; padding: 2px 8px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; border: 1px solid var(--band-low-border); background: var(--band-low-bg); color: var(--band-low-text); }
+.tpl-kind-first_contact { border-color: var(--band-medium-border); background: var(--band-medium-bg); color: var(--band-medium-text); }
+.tpl-kind-reminder { border-color: var(--band-high-border); background: var(--band-high-bg); color: var(--band-high-text); }

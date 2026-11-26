@@ -5,8 +5,8 @@ from .models import VesselObservation
 
 @admin.register(VesselObservation)
 class VesselObservationAdmin(admin.ModelAdmin):
-    list_display = ["vessel", "timestamp", "latitude", "longitude", "speed", "course", "source"]
-    list_filter = ["source"]
+    list_display = ["vessel", "timestamp", "latitude", "longitude", "speed", "course", "port_area", "source"]
+    list_filter = ["source", "port_area"]
     search_fields = ["vessel__name", "vessel__mmsi"]
     date_hierarchy = "timestamp"
 
