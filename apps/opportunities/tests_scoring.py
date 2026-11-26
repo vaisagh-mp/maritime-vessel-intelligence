@@ -20,6 +20,7 @@ from apps.common.constants import (
     RELATIONSHIP_ROLE_MANAGER,
     RELATIONSHIP_ROLE_OPERATOR,
     RELATIONSHIP_ROLE_OWNER,
+    RELATIONSHIP_ROLE_REGISTERED_OWNER,
     RELATIONSHIP_ROLE_TECHNICAL_MANAGER,
     STAGE_DETECTED,
     STAGE_LOST,
@@ -35,10 +36,15 @@ from apps.opportunities.models import Opportunity, OpportunityStageChange
 from apps.ports.models import Port
 from apps.relationships.models import VesselRelationship
 from apps.vessels.models import Vessel
-from services.opportunity_service import apply_lead, get_or_create_open_opportunity
+from services.opportunity_service import (
+    apply_lead,
+    classify_zone_by_eta,
+    get_or_create_open_opportunity,
+    resolve_zone,
+)
 from services.scoring_service import (
+    _score_contacts,
     _score_origin_and_repeat,
-    _score_priority_manager,
     _score_vessel_size,
     calculate_score,
     calculate_score_and_reason,
@@ -201,35 +207,150 @@ class FactorBoundaryTests(TestCase):
         pts, reasons = _score_origin_and_repeat(v, opp)
         self.assertEqual(pts, 0)
 
-    # 3. Manager Roles
-    def _test_manager_role(self, role, expected_pts):
-        v = _make_vessel(mmsi=f"1000000{abs(hash(role)) % 90 + 10}")
-        c = Company.objects.create(name=f"Co {role}", company_type="manager", priority="high")
-        VesselRelationship.objects.create(vessel=v, company=c, role=role, source="test")
-        self.assertEqual(_score_priority_manager(v), expected_pts)
+    # 3. Manager and owner contact quality
+    _contact_counter = 0
 
-    def test_manager_role_technical_manager(self):
-        self._test_manager_role(RELATIONSHIP_ROLE_TECHNICAL_MANAGER, 20)
+    def _contacts(self, role, priority="medium", is_current=True, **company_fields):
+        """Score a fresh vessel linked to one new company in ``role``."""
+        type(self)._contact_counter += 1
+        n = type(self)._contact_counter
+        v = _make_vessel(mmsi=f"7000{n:05d}")
+        c = Company.objects.create(
+            name=f"Co {n}", company_type="manager", priority=priority, **company_fields
+        )
+        VesselRelationship.objects.create(
+            vessel=v, company=c, role=role, source="test", is_current=is_current
+        )
+        return _score_contacts(v)
 
-    def test_manager_role_ism_manager(self):
-        self._test_manager_role(RELATIONSHIP_ROLE_ISM_MANAGER, 20)
+    ALL_MANAGER_ROLES = [
+        RELATIONSHIP_ROLE_TECHNICAL_MANAGER,
+        RELATIONSHIP_ROLE_ISM_MANAGER,
+        RELATIONSHIP_ROLE_COMMERCIAL_MANAGER,
+        RELATIONSHIP_ROLE_OPERATOR,
+        RELATIONSHIP_ROLE_MANAGER,
+    ]
 
-    def test_manager_role_commercial_manager(self):
-        self._test_manager_role(RELATIONSHIP_ROLE_COMMERCIAL_MANAGER, 20)
+    def test_every_manager_role_with_website_and_email_scores_20_without_any_priority(self):
+        for role in self.ALL_MANAGER_ROLES:
+            with self.subTest(role=role):
+                pts, reasons = self._contacts(
+                    role, priority="low", website="https://m.example.com", email="a@m.example.com"
+                )
+                self.assertEqual(pts, 20)
+                self.assertEqual(reasons, [f"{role.replace('_', ' ')} with contacts 20"])
 
-    def test_manager_role_operator(self):
-        self._test_manager_role(RELATIONSHIP_ROLE_OPERATOR, 20)
+    def test_manager_with_only_website_or_only_email_scores_12(self):
+        pts, _ = self._contacts(RELATIONSHIP_ROLE_TECHNICAL_MANAGER, website="https://m.example.com")
+        self.assertEqual(pts, 12)
+        pts, reasons = self._contacts(RELATIONSHIP_ROLE_ISM_MANAGER, email="a@m.example.com")
+        self.assertEqual(pts, 12)
+        self.assertEqual(reasons, ["ism manager with partial contacts 12"])
 
-    def test_manager_role_manager(self):
-        self._test_manager_role(RELATIONSHIP_ROLE_MANAGER, 20)
+    def test_manager_name_only_scores_6(self):
+        pts, reasons = self._contacts(RELATIONSHIP_ROLE_TECHNICAL_MANAGER)
+        self.assertEqual(pts, 6)
+        self.assertEqual(reasons, ["technical manager name only 6"])
 
-    def test_owner_roles_not_manager(self):
-        self._test_manager_role(RELATIONSHIP_ROLE_OWNER, 0)
-        self._test_manager_role(RELATIONSHIP_ROLE_BENEFICIAL_OWNER, 0)
+    def test_owner_with_email_scores_8_and_name_only_4(self):
+        for role in (
+            RELATIONSHIP_ROLE_REGISTERED_OWNER,
+            RELATIONSHIP_ROLE_BENEFICIAL_OWNER,
+            RELATIONSHIP_ROLE_OWNER,
+        ):
+            with self.subTest(role=role):
+                pts, _ = self._contacts(role, email="o@example.com")
+                self.assertEqual(pts, 8)
+                pts, _ = self._contacts(role)
+                self.assertEqual(pts, 4)
+
+    def test_owner_website_alone_does_not_count_as_email(self):
+        pts, _ = self._contacts(RELATIONSHIP_ROLE_REGISTERED_OWNER, website="https://o.example.com")
+        self.assertEqual(pts, 4)
+
+    def test_best_manager_counts_not_the_sum(self):
+        v = _make_vessel(mmsi="710000001")
+        full = Company.objects.create(
+            name="Full", company_type="manager", website="https://f.example.com", email="a@f.example.com"
+        )
+        bare = Company.objects.create(name="Bare", company_type="manager")
+        VesselRelationship.objects.create(
+            vessel=v, company=full, role=RELATIONSHIP_ROLE_TECHNICAL_MANAGER, source="test"
+        )
+        VesselRelationship.objects.create(
+            vessel=v, company=bare, role=RELATIONSHIP_ROLE_ISM_MANAGER, source="test"
+        )
+        pts, reasons = _score_contacts(v)
+        self.assertEqual(pts, 20)  # not 26
+        self.assertEqual(len(reasons), 1)
+
+    def test_same_company_in_four_manager_roles_counts_once(self):
+        v = _make_vessel(mmsi="710000002")
+        c = Company.objects.create(
+            name="One Co", company_type="manager", website="https://o.example.com", email="a@o.example.com"
+        )
+        for role in self.ALL_MANAGER_ROLES[:4]:
+            VesselRelationship.objects.create(vessel=v, company=c, role=role, source="test")
+        pts, _ = _score_contacts(v)
+        self.assertEqual(pts, 20)
+
+    def test_manager_plus_owner_adds_both_parts(self):
+        v = _make_vessel(mmsi="710000003")
+        m = Company.objects.create(
+            name="M", company_type="manager", website="https://m.example.com", email="a@m.example.com"
+        )
+        o = Company.objects.create(name="O", company_type="owner", email="o@example.com")
+        VesselRelationship.objects.create(vessel=v, company=m, role=RELATIONSHIP_ROLE_TECHNICAL_MANAGER, source="t")
+        VesselRelationship.objects.create(vessel=v, company=o, role=RELATIONSHIP_ROLE_REGISTERED_OWNER, source="t")
+        pts, reasons = _score_contacts(v)
+        self.assertEqual(pts, 28)  # 20 + 8
+        self.assertEqual(len(reasons), 2)
+
+    def test_priority_high_adds_5_and_priority_medium_or_low_adds_nothing(self):
+        pts, reasons = self._contacts(RELATIONSHIP_ROLE_TECHNICAL_MANAGER, priority="high")
+        self.assertEqual(pts, 6 + 5)
+        self.assertIn("high-priority company 5", reasons)
+        for priority in ("medium", "low"):
+            pts, _ = self._contacts(RELATIONSHIP_ROLE_TECHNICAL_MANAGER, priority=priority)
+            self.assertEqual(pts, 6)
+
+    def test_group_cap_is_28(self):
+        v = _make_vessel(mmsi="710000004")
+        m = Company.objects.create(
+            name="M", company_type="manager", priority="high",
+            website="https://m.example.com", email="a@m.example.com",
+        )
+        o = Company.objects.create(name="O", company_type="owner", email="o@example.com")
+        VesselRelationship.objects.create(vessel=v, company=m, role=RELATIONSHIP_ROLE_TECHNICAL_MANAGER, source="t")
+        VesselRelationship.objects.create(vessel=v, company=o, role=RELATIONSHIP_ROLE_REGISTERED_OWNER, source="t")
+        pts, reasons = _score_contacts(v)
+        self.assertEqual(pts, 28)  # 20 + 8 + 5 = 33, capped
+        self.assertIn("contacts capped at 28", reasons)
+
+    def test_ended_relationship_scores_nothing(self):
+        pts, reasons = self._contacts(
+            RELATIONSHIP_ROLE_TECHNICAL_MANAGER, is_current=False,
+            website="https://m.example.com", email="a@m.example.com",
+        )
+        self.assertEqual((pts, reasons), (0, []))
 
     def test_no_relationships_gives_0_and_does_not_crash(self):
         v = _make_vessel(mmsi="100000088")
-        self.assertEqual(_score_priority_manager(v), 0)
+        self.assertEqual(_score_contacts(v), (0, []))
+
+    def test_unsaved_vessel_gives_0(self):
+        self.assertEqual(_score_contacts(Vessel(mmsi="1", name="X")), (0, []))
+
+    def test_contact_reasons_appear_in_the_lead_reason(self):
+        v = _make_vessel(mmsi="710000005", grt=60000)
+        c = Company.objects.create(
+            name="M", company_type="manager", website="https://m.example.com", email="a@m.example.com"
+        )
+        VesselRelationship.objects.create(vessel=v, company=c, role=RELATIONSHIP_ROLE_TECHNICAL_MANAGER, source="t")
+        opp = _make_opp(v, self.port)
+        score, reason = calculate_score_and_reason(opp)
+        self.assertIn("technical manager with contacts 20", reason)
+        self.assertEqual(score, 30 + 15 + 20)  # anchorage + size + manager
 
     # 4. Anchorage bound zone creation & score ordering
     def test_anchorage_bound_creation_and_score_ordering(self):
@@ -433,3 +554,136 @@ class ZoneFilterConsistencyTests(TestCase):
 
         self.assertNotIn(opp_anch.id, returned_ids)
         self.assertIn(opp_bound.id, returned_ids)
+
+
+class EtaPassedZoneTests(TestCase):
+    """A passed ETA means "arriving now" (24h zone), never "at anchor"."""
+
+    def setUp(self):
+        self.port = _make_port()
+        self.now = timezone.now()
+
+    # -- classify_zone_by_eta ------------------------------------------------
+
+    def test_past_eta_is_24h_not_anchorage(self):
+        self.assertEqual(classify_zone_by_eta(self.now - timedelta(hours=3), self.now), ZONE_24H)
+        self.assertEqual(classify_zone_by_eta(self.now - timedelta(days=5), self.now), ZONE_24H)
+
+    def test_eta_exactly_now_is_24h(self):
+        self.assertEqual(classify_zone_by_eta(self.now, self.now), ZONE_24H)
+
+    def test_future_eta_bands_unchanged(self):
+        self.assertEqual(classify_zone_by_eta(self.now + timedelta(hours=24), self.now), ZONE_24H)
+        self.assertEqual(
+            classify_zone_by_eta(self.now + timedelta(hours=24, minutes=1), self.now), ZONE_72H
+        )
+        self.assertEqual(classify_zone_by_eta(self.now + timedelta(hours=72), self.now), ZONE_72H)
+        self.assertEqual(classify_zone_by_eta(self.now + timedelta(hours=200), self.now), ZONE_72H)
+
+    def test_eta_none_keeps_legacy_discovery_behaviour(self):
+        self.assertEqual(classify_zone_by_eta(None, self.now), ZONE_ANCHORAGE)
+
+    # -- resolve_zone ----------------------------------------------------------
+
+    def test_resolve_anchorage_observation_wins_over_any_eta(self):
+        past = self.now - timedelta(hours=2)
+        self.assertEqual(resolve_zone(ZONE_24H, past, "anchorage", self.now), ZONE_ANCHORAGE)
+        self.assertEqual(resolve_zone(ZONE_72H, None, "anchorage", self.now), ZONE_ANCHORAGE)
+
+    def test_resolve_passed_eta_with_inbound_observation_is_24h(self):
+        past = self.now - timedelta(hours=2)
+        self.assertEqual(resolve_zone(ZONE_72H, past, "inbound", self.now), ZONE_24H)
+
+    def test_resolve_passed_eta_without_observation_is_24h(self):
+        past = self.now - timedelta(hours=2)
+        self.assertEqual(resolve_zone(ZONE_72H, past, None, self.now), ZONE_24H)
+
+    def test_resolve_inbound_observation_corrects_a_wrongly_stored_anchorage(self):
+        """A lead stored as anchorage only because its ETA passed goes back to 24h
+        when the latest observation says the vessel is still inbound."""
+        past = self.now - timedelta(hours=2)
+        self.assertEqual(resolve_zone(ZONE_ANCHORAGE, past, "inbound", self.now), ZONE_24H)
+
+    def test_resolve_keeps_anchorage_when_there_is_no_contrary_evidence(self):
+        past = self.now - timedelta(hours=2)
+        self.assertEqual(resolve_zone(ZONE_ANCHORAGE, past, None, self.now), ZONE_ANCHORAGE)
+        self.assertEqual(resolve_zone(ZONE_ANCHORAGE, past, "unknown", self.now), ZONE_ANCHORAGE)
+        self.assertEqual(resolve_zone(ZONE_ANCHORAGE, past, "in_port", self.now), ZONE_ANCHORAGE)
+
+    def test_resolve_anchorage_bound_observation(self):
+        self.assertEqual(
+            resolve_zone(ZONE_72H, self.now + timedelta(hours=10), "anchorage_bound", self.now),
+            ZONE_ANCHORAGE_BOUND,
+        )
+        # already anchorage: stays
+        self.assertEqual(
+            resolve_zone(ZONE_ANCHORAGE, self.now + timedelta(hours=10), "anchorage_bound", self.now),
+            ZONE_ANCHORAGE,
+        )
+
+    def test_resolve_no_eta_no_evidence_keeps_the_zone(self):
+        self.assertEqual(resolve_zone(ZONE_72H, None, None, self.now), ZONE_72H)
+        self.assertEqual(resolve_zone(ZONE_72H, None, "inbound", self.now), ZONE_72H)
+
+    # -- the rescore command ---------------------------------------------------
+
+    def _lead(self, mmsi, name, zone, eta, port_area=None):
+        v = _make_vessel(mmsi=mmsi, name=name, grt=45000)
+        if port_area is not None:
+            VesselObservation.objects.create(
+                vessel=v, latitude=1.0, longitude=103.0, source="test",
+                timestamp=self.now - timedelta(minutes=30), port_area=port_area,
+            )
+        return _make_opp(v, self.port, zone=zone, eta=eta, score=40)
+
+    def test_rescore_does_not_move_a_passed_eta_lead_into_anchorage(self):
+        """The four leads from the Step 8 dry-run (ELBE POINT and others) jumped to
+        anchorage only because their ETA had passed."""
+        past = self.now - timedelta(hours=1)
+        leads = [
+            self._lead(f"72000000{i}", name, ZONE_24H, past, port_area="inbound")
+            for i, name in enumerate(["ELBE POINT", "GUAN YUAN FU XING", "FEDERAL INTREPID", "DIONI"])
+        ]
+        call_command("rescore_opportunities", "--apply", stdout=io.StringIO())
+        for opp in leads:
+            opp.refresh_from_db()
+            self.assertEqual(opp.zone, ZONE_24H, opp.vessel.name)
+            # 24h zone 15 + size 12 = 27, not anchorage 30 + 12 = 42
+            self.assertEqual(opp.score, 27, opp.vessel.name)
+
+    def test_rescore_moves_to_anchorage_only_with_an_anchorage_observation(self):
+        past = self.now - timedelta(hours=1)
+        at_anchor = self._lead("720000100", "AT ANCHOR", ZONE_24H, past, port_area="anchorage")
+        not_anchor = self._lead("720000101", "NOT ANCHOR", ZONE_24H, past, port_area="inbound")
+        call_command("rescore_opportunities", "--apply", stdout=io.StringIO())
+        at_anchor.refresh_from_db()
+        not_anchor.refresh_from_db()
+        self.assertEqual(at_anchor.zone, ZONE_ANCHORAGE)
+        self.assertEqual(not_anchor.zone, ZONE_24H)
+
+    def test_rescore_corrects_a_lead_wrongly_stored_as_anchorage(self):
+        past = self.now - timedelta(hours=1)
+        wrong = self._lead("720000200", "WRONG", ZONE_ANCHORAGE, past, port_area="inbound")
+        call_command("rescore_opportunities", "--apply", stdout=io.StringIO())
+        wrong.refresh_from_db()
+        self.assertEqual(wrong.zone, ZONE_24H)
+
+    def test_rescore_dry_run_reports_zone_changes_but_writes_nothing(self):
+        past = self.now - timedelta(hours=1)
+        wrong = self._lead("720000300", "WRONG", ZONE_ANCHORAGE, past, port_area="inbound")
+        out = io.StringIO()
+        call_command("rescore_opportunities", "--dry-run", stdout=out)
+        wrong.refresh_from_db()
+        self.assertEqual(wrong.zone, ZONE_ANCHORAGE)
+        self.assertEqual(wrong.score, 40)
+        self.assertIn("No records were modified", out.getvalue())
+
+    def test_rescore_is_idempotent_for_zones(self):
+        past = self.now - timedelta(hours=1)
+        lead = self._lead("720000400", "X", ZONE_ANCHORAGE, past, port_area="inbound")
+        call_command("rescore_opportunities", "--apply", stdout=io.StringIO())
+        lead.refresh_from_db()
+        first = (lead.zone, lead.score, lead.lead_reason)
+        call_command("rescore_opportunities", "--apply", stdout=io.StringIO())
+        lead.refresh_from_db()
+        self.assertEqual((lead.zone, lead.score, lead.lead_reason), first)

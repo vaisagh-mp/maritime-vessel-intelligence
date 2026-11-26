@@ -18,14 +18,9 @@ from collections import Counter
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from apps.common.constants import (
-    CLOSED_STAGES,
-    PORT_AREA_ANCHORAGE_BOUND,
-    ZONE_ANCHORAGE,
-    ZONE_ANCHORAGE_BOUND,
-)
+from apps.common.constants import CLOSED_STAGES
 from apps.opportunities.models import Opportunity
-from services.opportunity_service import classify_zone_by_eta
+from services.opportunity_service import resolve_zone
 from services.scoring_service import calculate_score_and_reason, get_band
 
 
@@ -72,22 +67,14 @@ class Command(BaseCommand):
             old_zone = opp.zone
             before_bands[old_band] += 1
 
-            # Zone re-evaluation:
-            # 1. If latest observation physically observed at anchorage, keep/upgrade to anchorage
-            # 2. If latest observation was anchorage_bound, zone is anchorage_bound (unless already anchorage)
-            # 3. Else if ETA is known, classify by ETA (unless already anchorage)
-            new_zone = old_zone
+            # Zone re-evaluation from the latest observation (see resolve_zone):
+            # anchorage evidence wins; a passed ETA alone never means anchorage.
             latest_obs = opp.vessel.observations.first()
-            if latest_obs:
-                if latest_obs.port_area == "anchorage":
-                    new_zone = ZONE_ANCHORAGE
-                elif latest_obs.port_area in ("anchorage_bound", PORT_AREA_ANCHORAGE_BOUND):
-                    if old_zone != ZONE_ANCHORAGE:
-                        new_zone = ZONE_ANCHORAGE_BOUND
-                elif opp.eta is not None and old_zone != ZONE_ANCHORAGE:
-                    new_zone = classify_zone_by_eta(opp.eta)
-            elif opp.eta is not None and old_zone != ZONE_ANCHORAGE:
-                new_zone = classify_zone_by_eta(opp.eta)
+            new_zone = resolve_zone(
+                old_zone,
+                opp.eta,
+                latest_obs.port_area if latest_obs else None,
+            )
 
             opp.zone = new_zone
 

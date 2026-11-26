@@ -315,7 +315,11 @@ async function populatePortsDropdown() {
 
         for (const port of ports) {
             const locode = port.un_locode ? ` (${port.un_locode})` : "";
-            const option = el("option", { value: String(port.id) }, `${port.name}${locode}`);
+            const option = el(
+                "option",
+                { value: String(port.id), "data-locode": port.un_locode || "" },
+                `${port.name}${locode}`
+            );
             if (String(port.id) === currentFilters.port) {
                 option.selected = true;
             }

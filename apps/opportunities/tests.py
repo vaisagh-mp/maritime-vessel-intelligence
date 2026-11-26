@@ -1,3 +1,4 @@
+from django.conf import settings
 import csv
 import io
 import re
@@ -484,7 +485,7 @@ class OpportunityNotesAndHistoryTests(TestCase):
 
         # GET / to establish CSRF cookie via base template's {% csrf_token %}
         home_page = django_client.get("/")
-        csrf_token = home_page.cookies["csrftoken"].value
+        csrf_token = home_page.cookies[settings.CSRF_COOKIE_NAME].value
 
         # POST with CSRF token succeeds
         res_with_csrf = django_client.post(

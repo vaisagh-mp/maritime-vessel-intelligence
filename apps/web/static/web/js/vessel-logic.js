@@ -331,3 +331,27 @@ export function formatDateTimeUtc(value) {
         return String(value);
     }
 }
+
+/**
+ * One line saying who confirmed an owner/manager link and when.
+ * @param {{verified?: boolean, verified_by_name?: string, last_verified_date?: string|null}} rel
+ * @returns {string} e.g. "Confirmed by Asha Rao on 2026-11-24", or "" when not verified
+ */
+export function verificationText(rel) {
+    if (!rel || !rel.verified) return "";
+    const who = rel.verified_by_name ? ` by ${rel.verified_by_name}` : "";
+    const when = rel.last_verified_date ? ` on ${formatDate(rel.last_verified_date)}` : "";
+    return `Confirmed${who}${when}`;
+}
+
+/**
+ * What to tell the user about the owner lookup for a vessel.
+ * @param {string|null|undefined} checkedAt ISO timestamp of the last lookup, if any
+ * @param {boolean} hasData true when owners or managers are already shown
+ * @returns {string}
+ */
+export function ownerLookupText(checkedAt, hasData) {
+    if (!checkedAt) return "Owner not looked up yet.";
+    const day = formatDate(checkedAt);
+    return hasData ? `Owner data last checked on ${day}.` : `Checked on ${day}, no data returned.`;
+}

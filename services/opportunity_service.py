@@ -5,7 +5,9 @@ from datetime import timedelta
 from django.utils import timezone
 
 from apps.common.constants import (
+    PORT_AREA_ANCHORAGE,
     PORT_AREA_ANCHORAGE_BOUND,
+    PORT_AREA_INBOUND,
     ZONE_24H,
     ZONE_72H,
     ZONE_ANCHORAGE,
@@ -16,20 +18,50 @@ from services.scoring_service import calculate_score, calculate_score_and_reason
 
 
 def classify_zone_by_eta(eta, now=None) -> str:
-    """ETA-based classification, used by enrichment once a real ETA is known.
-    Boundary values: exactly 24h -> "24h", exactly 72h -> "72h", eta in the
-    past or within 0h -> "anchorage"."""
+    """ETA-based classification for vessels that are on their way in.
+
+    Boundary values: exactly 24h -> "24h", exactly 72h -> "72h".
+    An ETA in the past (or exactly now) means "arriving now", so it stays in
+    the "24h" zone (the card still shows "ETA passed"). A passed ETA is NOT
+    evidence that the vessel is at anchor: the anchorage zone is only used when
+    an observation says so (see ``resolve_zone``).
+
+    ``eta=None`` keeps the old discovery-time behaviour ("anchorage"), because
+    the legacy discovery path only ever sees vessels inside the anchorage geofence.
+    """
     now = now or timezone.now()
     if eta is None:
         return ZONE_ANCHORAGE
     delta = eta - now
-    if delta <= timedelta(hours=0):
-        return ZONE_ANCHORAGE
     if delta <= timedelta(hours=24):
         return ZONE_24H
     if delta <= timedelta(hours=72):
         return ZONE_72H
     return ZONE_72H  # beyond 72h still bucketed as the widest known zone at MVP
+
+
+def resolve_zone(old_zone, eta, latest_port_area=None, now=None) -> str:
+    """Single place that decides an open lead's zone from the latest evidence.
+
+    Used by ``rescore_opportunities`` (and usable by any other caller).
+
+    1. Latest observation says anchorage       -> anchorage
+    2. Latest observation says anchorage bound -> anchorage bound
+       (unless the lead is already in anchorage)
+    3. Latest observation says inbound         -> by ETA, even if the lead was
+       stored as anchorage (a vessel still inbound cannot be at anchor)
+    4. Anything else (no observation, in port, unknown) -> keep an existing
+       anchorage zone; otherwise by ETA when one is known; otherwise unchanged.
+    """
+    if latest_port_area == PORT_AREA_ANCHORAGE:
+        return ZONE_ANCHORAGE
+    if latest_port_area == PORT_AREA_ANCHORAGE_BOUND:
+        return old_zone if old_zone == ZONE_ANCHORAGE else ZONE_ANCHORAGE_BOUND
+    if latest_port_area == PORT_AREA_INBOUND and eta is not None:
+        return classify_zone_by_eta(eta, now)
+    if eta is not None and old_zone != ZONE_ANCHORAGE:
+        return classify_zone_by_eta(eta, now)
+    return old_zone
 
 
 def classify_zone_by_proximity() -> str:

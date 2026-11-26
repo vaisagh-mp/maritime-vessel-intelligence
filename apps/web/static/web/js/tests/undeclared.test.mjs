@@ -17,7 +17,7 @@ const __dirname = path.dirname(__filename);
 const jsDir = path.resolve(__dirname, "..");
 
 test("regression guard: no undeclared leftovers like trimmedNote exist in controller files", () => {
-    const controllers = ["lead.js", "vessel.js", "board.js", "ui.js", "api.js"];
+    const controllers = ["lead.js", "vessel.js", "dashboard.js", "priority.js", "bd.js", "sidebar.js", "lead-table.js", "dashboard-logic.js", "ui.js", "api.js"];
     const forbiddenUndeclared = ["trimmedNote"];
 
     for (const filename of controllers) {

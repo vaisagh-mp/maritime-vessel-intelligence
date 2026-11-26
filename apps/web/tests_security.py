@@ -207,7 +207,7 @@ class TestWebSecurity(TestCase):
 
         # Obtain valid CSRF token cookie via initial GET
         csrf_client.get("/login/")
-        csrf_token = csrf_client.cookies["csrftoken"].value
+        csrf_token = csrf_client.cookies[settings.CSRF_COOKIE_NAME].value
 
         csrf_client.login(username="sec_bd", password="secpassword123")
 

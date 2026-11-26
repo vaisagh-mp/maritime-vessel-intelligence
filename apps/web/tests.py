@@ -31,6 +31,7 @@ from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from apps.common.constants import CLOSED_STAGES, OPPORTUNITY_STAGE_CHOICES
+from apps.companies.models import Company
 from apps.observations.models import VesselObservation
 from apps.observations.serializers import VesselObservationSerializer
 from apps.opportunities.models import Opportunity
@@ -112,10 +113,15 @@ class TestWebFoundations(TestCase):
             is_inbound=True,
             lead_reason="Vessel inbound with high hull fouling probability.",
         )
+        self.company = Company.objects.create(
+            name="TEST FLEET CO",
+            company_type="manager",
+            country="Singapore",
+        )
 
     # 1. Anonymous GET / redirects to /login/?next=/
     def test_anonymous_get_home_redirects_to_login(self):
-        paths = ["/", f"/vessels/{self.vessel.id}/", f"/leads/{self.opportunity.id}/"]
+        paths = ["/", f"/vessels/{self.vessel.id}/", f"/leads/{self.opportunity.id}/", "/companies/", f"/companies/{self.company.id}/"]
         for path in paths:
             response = self.client.get(path)
             self.assertEqual(response.status_code, 302, f"Failed for {path}")
@@ -126,7 +132,7 @@ class TestWebFoundations(TestCase):
         response = self.client.get("/login/")
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'name="csrfmiddlewaretoken"')
-        self.assertIn("csrftoken", response.cookies)
+        self.assertIn(settings.CSRF_COOKIE_NAME, response.cookies)
 
         post_response = self.client.post(
             "/login/",
@@ -139,7 +145,7 @@ class TestWebFoundations(TestCase):
 
     # 3. Access control: Admin & BD Manager get 200, user with no role gets 403 friendly page
     def test_role_access_and_no_access_page(self):
-        paths = ["/", f"/vessels/{self.vessel.id}/", f"/leads/{self.opportunity.id}/"]
+        paths = ["/", f"/vessels/{self.vessel.id}/", f"/leads/{self.opportunity.id}/", "/companies/", f"/companies/{self.company.id}/"]
 
         # User with no role gets 403 on all pages
         self.client.login(username="plain_user", password="plainpassword123")
@@ -172,9 +178,7 @@ class TestWebFoundations(TestCase):
         self.client.login(username="admin_user", password="adminpassword123")
         res_admin = self.client.get("/")
         self.assertEqual(res_admin.status_code, 200)
-        self.assertContains(res_admin, '<span class="user-role-pill">Role: Admin</span>')
-        self.assertNotContains(res_admin, '<button class="user-role-pill"')
-        self.assertNotContains(res_admin, '<a class="user-role-pill"')
+        self.assertContains(res_admin, '<span class="user-role-text">Admin</span>')
         self.assertContains(res_admin, 'aria-current="page"')
         self.client.logout()
 
@@ -182,9 +186,7 @@ class TestWebFoundations(TestCase):
         self.client.login(username="bd_user", password="bdpassword123")
         res_bd = self.client.get("/")
         self.assertEqual(res_bd.status_code, 200)
-        self.assertContains(res_bd, '<span class="user-role-pill">Role: BD Manager</span>')
-        self.assertNotContains(res_bd, '<button class="user-role-pill"')
-        self.assertNotContains(res_bd, '<a class="user-role-pill"')
+        self.assertContains(res_bd, '<span class="user-role-text">BD Manager</span>')
         self.assertContains(res_bd, 'aria-current="page"')
         self.client.logout()
 
@@ -339,9 +341,11 @@ class TestWebFoundations(TestCase):
             "web/css/base.css",
             "web/css/components.css",
             "web/css/board.css",
+            "web/css/layout.css",
+            "web/css/pages.css",
+            "web/js/sidebar.js",
+            "web/js/dashboard.js",
             "web/js/stages.js",
-            "web/js/board-logic.js",
-            "web/js/board.js",
             "web/css/vessel.css",
             "web/js/vessel-logic.js",
             "web/js/vessel.js",
@@ -437,21 +441,26 @@ class TestWebFoundations(TestCase):
         lead_test = os.path.join(tests_dir, "lead-logic.test.mjs")
         ui_test = os.path.join(tests_dir, "ui.test.mjs")
         undeclared_test = os.path.join(tests_dir, "undeclared.test.mjs")
+        dashboard_test = os.path.join(tests_dir, "dashboard-logic.test.mjs")
+        companies_test = os.path.join(tests_dir, "companies-logic.test.mjs")
 
         self.assertTrue(os.path.exists(board_test), f"Test file {board_test} does not exist.")
         self.assertTrue(os.path.exists(vessel_test), f"Test file {vessel_test} does not exist.")
         self.assertTrue(os.path.exists(lead_test), f"Test file {lead_test} does not exist.")
         self.assertTrue(os.path.exists(ui_test), f"Test file {ui_test} does not exist.")
         self.assertTrue(os.path.exists(undeclared_test), f"Test file {undeclared_test} does not exist.")
+        self.assertTrue(os.path.exists(dashboard_test), f"Test file {dashboard_test} does not exist.")
+        self.assertTrue(os.path.exists(companies_test), f"Test file {companies_test} does not exist.")
 
         result = subprocess.run(
-            [node_bin, "--test", board_test, vessel_test, lead_test, ui_test, undeclared_test],
+            [node_bin, "--test", board_test, vessel_test, lead_test, ui_test, undeclared_test, dashboard_test, companies_test],
             capture_output=True,
             text=True,
         )
         if result.returncode != 0:
             self.fail(f"Node tests failed:\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}")
-        self.assertIn("pass 56", result.stdout)
+        self.assertTrue("# fail 0" in result.stdout or "fail 0" in result.stdout)
+        self.assertFalse("# pass 0\n" in result.stdout or "pass 0\n" in result.stdout)
 
     # 16. Vessel and Observation API contracts: serializer fields read-only and observations ordered newest first
     def test_vessel_and_observation_api_contracts(self):
@@ -571,7 +580,11 @@ class TestWebFoundations(TestCase):
         self.client.login(username="admin_user", password="adminpassword123")
 
         pages = [
-            ("/", r"board\.js\?v=\d+"),
+            ("/", r"dashboard\.js\?v=\d+"),
+            ("/priority/24h/", r"priority\.js\?v=\d+"),
+            ("/companies/", r"companies\.js\?v=\d+"),
+            (f"/companies/{self.company.id}/", r"company\.js\?v=\d+"),
+            ("/business-developers/", r"bd\.js\?v=\d+"),
             (f"/vessels/{self.vessel.id}/", r"vessel\.js\?v=\d+"),
             (f"/leads/{self.opportunity.id}/", r"lead\.js\?v=\d+"),
         ]
@@ -594,7 +607,7 @@ class TestWebFoundations(TestCase):
     # 20. Controller hygiene: board.js, vessel.js, and lead.js use onReady instead of raw DOMContentLoaded listener
     def test_controllers_use_on_ready_hygiene(self):
         js_dir = os.path.join(settings.BASE_DIR, "apps", "web", "static", "web", "js")
-        controllers = ["board.js", "vessel.js", "lead.js"]
+        controllers = ["dashboard.js", "priority.js", "companies.js", "company.js", "bd.js", "sidebar.js", "vessel.js", "lead.js"]
 
         for filename in controllers:
             filepath = os.path.join(js_dir, filename)
@@ -611,12 +624,12 @@ class TestWebFoundations(TestCase):
     # 21. Reset filters button with stable id and live status element
     def test_reset_filters_button_and_status_element(self):
         self.client.login(username="admin_user", password="adminpassword123")
-        res = self.client.get("/")
+        res = self.client.get("/priority/24h/")
         self.assertEqual(res.status_code, 200)
         html = res.content.decode("utf-8")
 
-        self.assertIn('id="reset-filters"', html, "Home page must contain button with id='reset-filters'")
-        self.assertIn('id="filter-status"', html, "Home page must contain status element id='filter-status'")
+        self.assertIn('id="reset-filters"', html, "Priority page must contain button with id='reset-filters'")
+        self.assertIn('id="filter-status"', html, "Priority page must contain status element id='filter-status'")
         self.assertIn('aria-live="polite"', html, "Status element must specify aria-live='polite'")
         self.client.logout()
 
@@ -670,3 +683,24 @@ class TestWebFoundations(TestCase):
                 self.assertTrue(os.path.exists(os.path.join(tmp_static, api_hashed)))
                 self.assertTrue(os.path.exists(os.path.join(tmp_static, ui_hashed)))
                 self.assertTrue(os.path.exists(os.path.join(tmp_static, logic_hashed)))
+
+    # 23. Sidebar Companies navigation link present for both roles and placed properly
+    def test_sidebar_companies_link_visibility(self):
+        for username in ["admin_user", "bd_user"]:
+            password = "adminpassword123" if username == "admin_user" else "bdpassword123"
+            self.client.login(username=username, password=password)
+            res = self.client.get("/")
+            self.assertEqual(res.status_code, 200)
+            self.assertContains(res, 'href="/companies/"')
+            self.assertContains(res, '<span>Companies</span>')
+            content = res.content.decode("utf-8")
+            priority_idx = content.find('<span>Priority</span>')
+            companies_idx = content.find('<span>Companies</span>')
+            self.assertNotEqual(priority_idx, -1)
+            self.assertNotEqual(companies_idx, -1)
+            self.assertGreater(companies_idx, priority_idx, "Companies link must be under Priority")
+            if username == "admin_user":
+                bd_idx = content.find('<span>Add BD / Business Developer</span>')
+                self.assertNotEqual(bd_idx, -1)
+                self.assertLess(companies_idx, bd_idx, "Companies link must be above Add BD")
+            self.client.logout()

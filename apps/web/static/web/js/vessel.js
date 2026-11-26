@@ -6,7 +6,7 @@
  */
 
 import { api, ApiError } from "./api.js";
-import { el, renderError, onReady, registerGlobalErrorHandlers, renderPageCrash } from "./ui.js";
+import { el, renderError, onReady, registerGlobalErrorHandlers, renderPageCrash, toast } from "./ui.js";
 import {
     navStatusLabel,
     portAreaLabel,
@@ -21,7 +21,11 @@ import {
     formatNumber,
     formatDate,
     formatDateTimeUtc,
+    verificationText,
+    ownerLookupText,
 } from "./vessel-logic.js";
+import { renderMailControls } from "./outreach.js";
+import { indexByCompany } from "./outreach-logic.js";
 
 const CLOSED_STAGES = new Set(["won", "lost"]);
 
@@ -34,17 +38,17 @@ function initBackLink() {
     const backLink = document.getElementById("back-to-board-link");
     if (!backLink) return;
 
+    // Go back to the priority list the user came from (same-origin path only).
+    let target = "/priority/24h/";
     try {
-        const storedQuery = sessionStorage.getItem("board_query");
-        if (storedQuery && typeof storedQuery === "string") {
-            const cleanQuery = storedQuery.startsWith("?") ? storedQuery : `?${storedQuery}`;
-            backLink.href = `/${cleanQuery}`;
-        } else {
-            backLink.href = "/";
+        const stored = sessionStorage.getItem("board_path");
+        if (stored && /^\/(priority\/[a-z0-9]+\/)?(\?[^\s]*)?$/i.test(stored)) {
+            target = stored;
         }
     } catch {
-        backLink.href = "/";
+        // ignore storage errors
     }
+    backLink.href = target;
 }
 
 /**
@@ -534,30 +538,58 @@ function formatEtaAndSource(eta, source) {
 }
 
 /**
+ * The "Look up owner" button. One Kpler lookup for this vessel; the server enforces
+ * the daily share for the button, the monthly allowance and the re-check period.
+ */
+function renderLookupBar(vesselId, checkedAt, hasData) {
+    const message = el("p", { class: "form-error", role: "status" });
+    const button = el("button", { type: "button", class: "btn btn-secondary" }, checkedAt ? "Look up again" : "Look up owner");
+    const bar = el("div", { class: "lookup-bar" });
+    if (hasData) bar.appendChild(el("p", { class: "lookup-note" }, ownerLookupText(checkedAt, true)));
+    button.addEventListener("click", async () => {
+        button.disabled = true;
+        message.textContent = "Looking up…";
+        try {
+            await api.post(`/api/v1/ingest/vessels/${vesselId}/lookup-owner/`, {});
+            await Promise.all([loadRelationshipsData(vesselId), loadOpportunitiesData(vesselId)]);
+        } catch (err) {
+            message.textContent = err.message || "Owner lookup failed.";
+            button.disabled = false;
+        }
+    });
+    bar.append(button, message);
+    return bar;
+}
+
+/**
  * 5. Load Owners and Managers relationships.
  */
 async function loadRelationshipsData(vesselId) {
+    let checkedAt = null;
+    let mailLog = {};
     const bodyRels = document.getElementById("body-relationships");
     if (!bodyRels) return;
 
     setLoading(bodyRels, "Loading owners and managers...");
 
     try {
-        const response = await api.get(`/api/v1/relationships/?vessel=${vesselId}&is_current=true`);
+        const [response, vesselInfo, mailInfo] = await Promise.all([
+            api.get(`/api/v1/relationships/?vessel=${vesselId}&is_current=true`),
+            api.get(`/api/v1/vessels/${vesselId}/`).catch(() => null),
+            api.get(`/api/v1/outreach/log/?vessel=${vesselId}`).catch(() => null),
+        ]);
+        checkedAt = vesselInfo ? vesselInfo.ownership_checked_at : null;
+        mailLog = indexByCompany(mailInfo ? mailInfo.results : []);
         const relationships = Array.isArray(response) ? response : (response.results || []);
 
         while (bodyRels.firstChild) {
             bodyRels.removeChild(bodyRels.firstChild);
         }
 
-        if (relationships.length === 0) {
-            setEmpty(bodyRels, "Owner and manager data is not available yet.");
-            return;
-        }
-
-        const groups = groupContacts(relationships);
+        const groups = relationships.length ? groupContacts(relationships) : [];
         if (groups.length === 0) {
-            setEmpty(bodyRels, "Owner and manager data is not available yet.");
+            setEmpty(bodyRels, ownerLookupText(checkedAt, false));
+            bodyRels.appendChild(renderLookupBar(vesselId, checkedAt, false));
             return;
         }
 
@@ -568,19 +600,20 @@ async function loadRelationshipsData(vesselId) {
             groupEl.appendChild(el("h3", { class: "contact-role-title" }, group.roleLabel));
 
             for (const rel of group.items) {
-                groupEl.appendChild(renderContactEntry(rel));
+                groupEl.appendChild(renderContactEntry(rel, mailLog[String(rel.company)], () => loadRelationshipsData(vesselId)));
             }
 
             listWrap.appendChild(groupEl);
         }
 
         bodyRels.appendChild(listWrap);
+        bodyRels.appendChild(renderLookupBar(vesselId, checkedAt, true));
     } catch (err) {
         renderError(bodyRels, `Error loading contacts: ${err.message}`, () => loadRelationshipsData(vesselId));
     }
 }
 
-function renderContactEntry(rel) {
+function renderContactEntry(rel, lastMail, reload) {
     const c = rel.company_detail || {};
     const companyName = c.name || "Unknown Company";
     const isVerified = Boolean(rel.verified);
@@ -658,7 +691,85 @@ function renderContactEntry(rel) {
     }
 
     entry.appendChild(detailsRow);
+
+    // Who confirmed it, when, and how
+    if (isVerified) {
+        const confirmed = verificationText(rel);
+        const lines = [el("span", { class: "contact-verified-line" }, confirmed)];
+        if (rel.verification_note) {
+            lines.push(el("span", { class: "contact-verified-note" }, `\u201c${rel.verification_note}\u201d`));
+        }
+        entry.appendChild(el("div", { class: "contact-verified" }, ...lines));
+    }
+
+    entry.appendChild(renderMailControls(rel, c, lastMail, reload || (() => {})));
+    entry.appendChild(renderVerifyControls(rel, entry));
     return entry;
+}
+
+/**
+ * "Mark verified" / "Undo verification" controls for one owner or manager link.
+ * Marking opens a small form (optional note); both actions call the API and reload the section.
+ */
+function renderVerifyControls(rel, entry) {
+    const host = el("div", { class: "contact-actions" });
+    const vesselId = document.querySelector("[data-vessel-id]").dataset.vesselId;
+
+    async function send(action, body, setError, setBusy) {
+        setBusy(true);
+        try {
+            await api.post(`/api/v1/relationships/${rel.id}/${action}/`, body);
+            toast(action === "verify" ? "Marked as verified." : "Verification removed.", "success");
+            await Promise.all([loadRelationshipsData(vesselId), loadOpportunitiesData(vesselId)]);
+        } catch (err) {
+            const noteErr = err && err.data && err.data.note;
+            setError((Array.isArray(noteErr) ? noteErr[0] : null) || (err && err.message) || "Could not save. Try again.");
+            setBusy(false);
+        }
+    }
+
+    if (rel.verified) {
+        const undo = el("button", { type: "button", class: "btn btn-quiet btn-sm", "aria-label": `Remove verification for ${(rel.company_detail || {}).name || "this company"}` }, "Undo verification");
+        const error = el("span", { class: "form-error", role: "alert" });
+        undo.addEventListener("click", () => send("unverify", {}, (m) => { error.textContent = m; }, (b) => { undo.disabled = b; }));
+        host.appendChild(undo);
+        host.appendChild(error);
+        return host;
+    }
+
+    const open = el("button", { type: "button", class: "btn btn-secondary btn-sm", "aria-expanded": "false", "aria-label": `Mark ${(rel.company_detail || {}).name || "this company"} as verified` }, "Mark verified");
+    const form = el("form", { class: "verify-form", hidden: true });
+    const noteId = `verify-note-${rel.id}`;
+    const note = el("textarea", { id: noteId, class: "form-textarea", rows: "2", maxlength: "300", placeholder: "e.g. Called the company and confirmed they manage this vessel" });
+    const error = el("span", { class: "form-error", role: "alert" });
+    const confirmBtn = el("button", { type: "submit", class: "btn btn-primary btn-sm" }, "Confirm");
+    const cancel = el("button", { type: "button", class: "btn btn-quiet btn-sm" }, "Cancel");
+    form.appendChild(el("label", { for: noteId, class: "verify-label" }, "How did you confirm it? (optional)"));
+    form.appendChild(note);
+    form.appendChild(el("div", { class: "verify-buttons" }, confirmBtn, cancel, error));
+
+    open.addEventListener("click", () => {
+        form.hidden = false;
+        open.hidden = true;
+        open.setAttribute("aria-expanded", "true");
+        note.focus();
+    });
+    cancel.addEventListener("click", () => {
+        form.hidden = true;
+        open.hidden = false;
+        open.setAttribute("aria-expanded", "false");
+        error.textContent = "";
+        note.value = "";
+        open.focus();
+    });
+    form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        error.textContent = "";
+        send("verify", { note: note.value }, (m) => { error.textContent = m; }, (b) => { confirmBtn.disabled = b; cancel.disabled = b; });
+    });
+    host.appendChild(open);
+    host.appendChild(form);
+    return host;
 }
 
 /**

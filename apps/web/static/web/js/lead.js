@@ -19,7 +19,7 @@ import {
     registerGlobalErrorHandlers,
     renderPageCrash,
 } from "./ui.js";
-import { etaRelative, etaSourceLabel } from "./board-logic.js";
+import { etaRelative, etaSourceLabel, inboundLabel } from "./board-logic.js";
 import {
     stageOptions,
     progressSteps,
@@ -49,17 +49,17 @@ function initBackLink() {
     const backLink = document.getElementById("back-to-board-link");
     if (!backLink) return;
 
+    // Go back to the priority list the user came from (same-origin path only).
+    let target = "/priority/24h/";
     try {
-        const storedQuery = sessionStorage.getItem("board_query");
-        if (storedQuery && typeof storedQuery === "string") {
-            const cleanQuery = storedQuery.startsWith("?") ? storedQuery : `?${storedQuery}`;
-            backLink.href = `/${cleanQuery}`;
-        } else {
-            backLink.href = "/";
+        const stored = sessionStorage.getItem("board_path");
+        if (stored && /^\/(priority\/[a-z0-9]+\/)?(\?[^\s]*)?$/i.test(stored)) {
+            target = stored;
         }
     } catch {
-        backLink.href = "/";
+        // ignore storage errors
     }
+    backLink.href = target;
 }
 
 /**
@@ -135,11 +135,15 @@ function renderHeader(opp) {
         }
 
         // Inbound Tag
-        if (opp.is_inbound) {
+        const arrival = inboundLabel(opp);
+        if (arrival) {
             const inboundBadge = el(
                 "span",
-                { class: "badge badge-inbound", title: "Inbound to port" },
-                "Inbound"
+                {
+                    class: arrival === "Inbound" ? "badge badge-inbound" : "badge badge-low",
+                    title: arrival === "Inbound" ? "Inbound to port" : "The ETA has passed. Refresh data to see where the vessel is now.",
+                },
+                arrival
             );
             badgeContainer.appendChild(inboundBadge);
         }

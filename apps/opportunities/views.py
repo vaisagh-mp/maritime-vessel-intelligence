@@ -1,5 +1,5 @@
 import csv
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import io
 
 from django.conf import settings
@@ -13,7 +13,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.common.constants import CLOSED_STAGES, STAGE_LOST, STAGE_WON
+from apps.common.constants import CLOSED_STAGES, STALE_INBOUND_HIDE_HOURS, STAGE_LOST, STAGE_WON
 from apps.common.pagination import StandardResultsSetPagination
 from apps.common.permissions import IsAdminOrBDManager
 from services.opportunity_service import recalculate_score
@@ -86,9 +86,29 @@ def filter_and_order_opportunities(request):
     """Reusable filtering and ordering logic shared by list and export views."""
     qs = Opportunity.objects.select_related("vessel", "port").all()
 
-    filterset = OpportunityBandFilter(request.GET, queryset=qs)
+    # stage=pipeline means "any stage after first contact" (the Dashboard "In pipeline" card).
+    data = request.GET.copy()
+    pipeline = (data.get("stage") or "").strip().lower() == "pipeline"
+    if pipeline:
+        data.pop("stage")
+
+    filterset = OpportunityBandFilter(data, queryset=qs)
     if filterset.is_valid():
         qs = filterset.qs
+    if pipeline:
+        from .summary import PIPELINE_STAGES
+
+        qs = qs.filter(stage__in=PIPELINE_STAGES)
+
+    # new_hours=24: leads first detected in the last N hours (the Dashboard "New in last 24 h" card)
+    new_hours = request.query_params.get("new_hours")
+    if new_hours:
+        try:
+            hours = min(max(int(new_hours), 1), 24 * 30)
+        except (TypeError, ValueError):
+            hours = None
+        if hours:
+            qs = qs.filter(detected_at__gte=datetime.now(timezone.utc) - timedelta(hours=hours))
 
     # open=true|false filter
     open_param = request.query_params.get("open")
@@ -105,6 +125,17 @@ def filter_and_order_opportunities(request):
             qs = qs.filter(is_inbound=True)
         elif inbound_param.lower() in ("false", "0"):
             qs = qs.filter(is_inbound=False)
+
+    # upcoming=true: drop leads whose ETA has already passed (status unconfirmed)
+    upcoming_param = request.query_params.get("upcoming")
+    if upcoming_param is not None and upcoming_param.lower() in ("true", "1"):
+        qs = qs.filter(Q(eta__isnull=True) | Q(eta__gte=datetime.now(timezone.utc)))
+
+    # hide_stale=true: drop inbound leads whose ETA passed long ago
+    stale_param = request.query_params.get("hide_stale")
+    if stale_param is not None and stale_param.lower() in ("true", "1"):
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=STALE_INBOUND_HIDE_HOURS)
+        qs = qs.exclude(is_inbound=True, eta__lt=cutoff)
 
     # q search filter: vessel name (icontains), IMO/MMSI (istartswith)
     q = request.query_params.get("q", "").strip()

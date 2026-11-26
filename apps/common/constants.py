@@ -66,6 +66,7 @@ ETA_SOURCE_CHOICES = [
 
 SOURCE_MARINETRAFFIC_EXPECTED_ARRIVALS = "marinetraffic:expected_arrivals"
 SOURCE_KPLER_VESSELS = "kpler:vessels"
+SOURCE_KPLER_AIS_LATEST = "kpler:ais_latest"
 
 ZONE_72H = "72h"
 ZONE_24H = "24h"
@@ -110,3 +111,8 @@ CLOSED_STAGES = {STAGE_WON, STAGE_LOST}
 
 # Vessel type exclusion blocklist lives in settings.VESSEL_TYPE_EXCLUSIONS so it
 # can be overridden per-deployment without a code change.
+
+
+# An inbound lead whose ETA passed this many hours ago is treated as stale:
+# it is hidden from the 24 hour / 72 hour lists and not counted as inbound.
+STALE_INBOUND_HIDE_HOURS = 48

@@ -166,50 +166,60 @@ class VesselSegmentSignalTests(TestCase):
 # Priority manager signal
 # ---------------------------------------------------------------------------
 
-class PriorityManagerSignalTests(TestCase):
+class ManagerContactSignalTests(TestCase):
+    """The manager signal now scores contact quality, not the manual priority."""
+
     def setUp(self):
         self.port = _port()
         self.vessel = _vessel()
 
-    def test_high_priority_manager_adds_20(self):
-        company = Company.objects.create(name="Top Manager", company_type="manager", priority="high")
-        VesselRelationship.objects.create(
-            vessel=self.vessel, company=company, role="manager", source="test"
+    def _link(self, company, role="manager", **kwargs):
+        return VesselRelationship.objects.create(
+            vessel=self.vessel, company=company, role=role, source="test", **kwargs
         )
+
+    def test_manager_with_website_and_email_adds_20_even_at_low_priority(self):
+        company = Company.objects.create(
+            name="Top Manager", company_type="manager", priority="low",
+            website="https://top.example.com", email="ops@top.example.com",
+        )
+        self._link(company)
         opp = _opportunity(self.vessel, self.port)
-        score = calculate_score(opp)
+        # anchorage (30) + manager with contacts (20)
+        self.assertEqual(calculate_score(opp), 50)
         self.assertIn(20, self._signal_breakdown(opp))
 
-    def test_medium_priority_manager_no_bonus(self):
+    def test_manager_name_only_adds_6(self):
         company = Company.objects.create(name="Mid Manager", company_type="manager", priority="medium")
-        VesselRelationship.objects.create(
-            vessel=self.vessel, company=company, role="manager", source="test"
-        )
+        self._link(company)
         opp = _opportunity(self.vessel, self.port)
-        score = calculate_score(opp)
-        # Only anchorage zone (30)
-        self.assertEqual(score, 30)
+        self.assertEqual(calculate_score(opp), 30 + 6)
 
-    def test_owner_not_manager_no_bonus(self):
-        company = Company.objects.create(name="Owner Co", company_type="owner", priority="high")
-        VesselRelationship.objects.create(
-            vessel=self.vessel, company=company, role="owner", source="test"
-        )
+    def test_high_priority_adds_5_on_top(self):
+        company = Company.objects.create(name="VIP", company_type="manager", priority="high")
+        self._link(company)
         opp = _opportunity(self.vessel, self.port)
-        score = calculate_score(opp)
-        self.assertEqual(score, 30)
+        self.assertEqual(calculate_score(opp), 30 + 6 + 5)
+
+    def test_owner_with_email_scores_as_owner_not_manager(self):
+        company = Company.objects.create(
+            name="Owner Co", company_type="owner", priority="medium", email="o@example.com"
+        )
+        self._link(company, role="registered_owner")
+        opp = _opportunity(self.vessel, self.port)
+        self.assertEqual(calculate_score(opp), 30 + 8)
 
     def _signal_breakdown(self, opp):
         """Helper — returns a list of individual signal scores."""
         from services.scoring_service import (
-            _score_eta_zone, _score_vessel_segment, _score_priority_manager,
+            _score_eta_zone, _score_vessel_segment, _score_contacts,
             _score_existing_relationship, _score_verified_contact,
             _score_previous_enquiry, _score_large_fleet, _score_recent_negative,
         )
         return [
             _score_eta_zone(opp),
             _score_vessel_segment(opp.vessel),
-            _score_priority_manager(opp.vessel),
+            _score_contacts(opp.vessel)[0],
             _score_existing_relationship(opp.vessel, opp),
             _score_verified_contact(opp.vessel),
             _score_previous_enquiry(opp.vessel, opp),
@@ -416,9 +426,9 @@ class CombinedSignalsTests(TestCase):
         opp = _opportunity(vessel, port, zone="anchorage")
 
         score = calculate_score(opp)
-        # anchorage (30) + exact segment (20) + priority manager (20)
-        # + verified contact (20) + size GRT (15) = 105, capped at 100
-        self.assertEqual(score, 100)
+        # anchorage (30) + exact segment (20) + manager name only (6) + high-priority (5)
+        # + verified contact (20) + size GRT (15) = 96
+        self.assertEqual(score, 96)
 
 
 # ---------------------------------------------------------------------------

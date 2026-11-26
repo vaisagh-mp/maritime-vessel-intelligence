@@ -141,6 +141,14 @@ def enrich_vessel(parsed_or_id: Any, source: str = "kpler") -> Optional[Dict[str
     # 1. Update Vessel Particulars (static fields overwrite, nulls never overwrite)
     if particulars.get("name"):
         vessel.name = particulars["name"]
+    new_mmsi = particulars.get("mmsi")
+    if new_mmsi and new_mmsi != vessel.mmsi:
+        # Kpler's MMSI is the registered one; replace a placeholder or stale value,
+        # but never create a duplicate (MMSI is unique).
+        if Vessel.objects.filter(mmsi=new_mmsi).exclude(pk=vessel.pk).exists():
+            logger.warning("MMSI %s already belongs to another vessel; keeping %s", new_mmsi, vessel.mmsi)
+        else:
+            vessel.mmsi = new_mmsi
     if particulars.get("callsign"):
         vessel.callsign = particulars["callsign"]
     if particulars.get("ship_id"):

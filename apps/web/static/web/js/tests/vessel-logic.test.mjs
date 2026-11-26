@@ -20,6 +20,7 @@ import {
     formatNumber,
     formatDate,
     formatDateTimeUtc,
+    verificationText,
 } from "../vessel-logic.js";
 
 test("navStatusLabel: handles standard ITU-R codes", () => {
@@ -199,4 +200,23 @@ test("formatting helpers: formatMetres, formatNumber, formatDate, formatDateTime
 
     assert.equal(formatDateTimeUtc("2026-11-04T14:30:00Z"), "2026-11-04 14:30 UTC");
     assert.equal(formatDateTimeUtc(null), "—");
+});
+
+test("verificationText: says who confirmed it and when, only when verified", () => {
+    assert.equal(verificationText({ verified: false }), "");
+    assert.equal(verificationText(null), "");
+    assert.equal(
+        verificationText({ verified: true, verified_by_name: "Asha Rao", last_verified_date: "2026-11-24" }),
+        "Confirmed by Asha Rao on 2026-11-24"
+    );
+    assert.equal(verificationText({ verified: true, verified_by_name: "", last_verified_date: null }), "Confirmed");
+    assert.equal(verificationText({ verified: true, verified_by_name: "Asha Rao" }), "Confirmed by Asha Rao");
+});
+
+import { ownerLookupText } from "../vessel-logic.js";
+
+test("ownerLookupText separates never looked up from no data returned", () => {
+    assert.equal(ownerLookupText(null, false), "Owner not looked up yet.");
+    assert.match(ownerLookupText("2026-11-20T01:00:00Z", false), /^Checked on .*no data returned\.$/);
+    assert.match(ownerLookupText("2026-11-20T01:00:00Z", true), /^Owner data last checked on /);
 });

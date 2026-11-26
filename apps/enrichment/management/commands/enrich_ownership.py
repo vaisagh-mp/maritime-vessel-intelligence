@@ -8,11 +8,10 @@ from typing import Any, Dict, List, Optional
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
-from django.db import models
 from django.utils import timezone
 
 from apps.common.constants import CLOSED_STAGES
-from apps.opportunities.models import Opportunity
+from apps.enrichment.models import EnrichmentLog
 from apps.vessels.models import Vessel
 from integrations.kpler.exceptions import (
     AuthenticationError,
@@ -24,6 +23,8 @@ from integrations.kpler.exceptions import (
 from integrations.kpler.graphql import _validate_and_dedup_imos, fetch_vessels
 from integrations.kpler.vessel_parser import parse_vessel_node
 from services.enrichment_service import enrich_vessel
+from services.ownership_queue import ownership_queue
+from services import quota_service
 
 logger = logging.getLogger("vessel_intel")
 
@@ -50,8 +51,13 @@ class Command(BaseCommand):
             "--refresh-days",
             dest="refresh_days",
             type=int,
-            default=30,
-            help="Age in days beyond which to re-check ownership (default 30).",
+            default=None,
+            help="Skip vessels looked up within this many days (default: only OWNERSHIP_RECHECK_DAYS, 180, applies).",
+        )
+        parser.add_argument(
+            "--manual",
+            action="store_true",
+            help="Count this run as a manual lookup (the Look up owner button) in the daily share.",
         )
         parser.add_argument(
             "--from-file",
@@ -184,6 +190,19 @@ class Command(BaseCommand):
         self.stdout.write(f"Leads rescored             : {total_leads_rescored}")
         self.stdout.write(f"Errors                     : {errors}")
 
+    @staticmethod
+    def _log_failure(endpoint: str, exc: Exception) -> None:
+        """Keep a record of a failed lookup (no vessels were used up)."""
+        message = str(exc)
+        for name in ("KPLER_API_KEY", "KPLER_AIS_API_KEY"):
+            key = getattr(settings, name, "") or ""
+            if key:
+                message = message.replace(key, "{api_key}")
+        EnrichmentLog.objects.create(
+            vessel=None, port=None, success=False, credits_spent=0,
+            endpoint_called=endpoint, error_message=message[:500],
+        )
+
     def _handle_live(self, options: dict, is_dry_run: bool):
         # 1. Live mode flag check
         enabled = getattr(settings, "KPLER_OWNERSHIP_ENABLED", False)
@@ -195,47 +214,36 @@ class Command(BaseCommand):
             return
 
         # 2. Monthly quota guard
-        cap = getattr(settings, "KPLER_OWNERSHIP_MONTHLY_IMO_CAP", 400)
+        cap = quota_service.ownership_cap()
         now = timezone.now()
-        checked_this_month = Vessel.objects.filter(
-            ownership_checked_at__year=now.year,
-            ownership_checked_at__month=now.month,
-        ).count()
+        checked_this_month = quota_service.ownership_used(now)
 
         if checked_this_month >= cap:
             self.stdout.write(
                 self.style.WARNING(
-                    f"Monthly quota limit reached ({checked_this_month}/{cap} IMOs enriched in current calendar month). Stopping."
+                    f"Monthly quota limit reached ({checked_this_month}/{cap} IMOs looked up in the current allowance period). Stopping."
                 )
             )
             return
 
         # 3. Select candidate IMOs
         max_imos = options.get("max_imos", 50)
-        refresh_days = options.get("refresh_days", 30)
+        refresh_days = options.get("refresh_days")
         imos_opt = options.get("imos")
 
         if imos_opt:
             clean_imos = _validate_and_dedup_imos(imos_opt)
         else:
-            cutoff = now - timedelta(days=refresh_days)
-            raw_imos = (
-                Opportunity.objects.filter(vessel__imo__isnull=False)
-                .exclude(stage__in=CLOSED_STAGES)
-                .filter(
-                    models.Q(vessel__ownership_checked_at__isnull=True)
-                    | models.Q(vessel__ownership_checked_at__lt=cutoff)
+            # Best leads first: anchorage, 24 h, 72 h, then score and size.
+            clean_imos = ownership_queue(max_imos, now=now)
+            if refresh_days is not None:
+                # An explicit age limit replaces the configured re-check period.
+                fresh = set(
+                    Vessel.objects.filter(imo__in=clean_imos)
+                    .filter(ownership_checked_at__gte=now - timedelta(days=refresh_days))
+                    .values_list("imo", flat=True)
                 )
-                .order_by("-score")
-                .values_list("vessel__imo", flat=True)
-            )
-            seen = set()
-            clean_imos = []
-            for imo in raw_imos:
-                if imo and len(imo) == 7 and imo.isdigit() and imo not in seen:
-                    seen.add(imo)
-                    clean_imos.append(imo)
-            clean_imos = clean_imos[:max_imos]
+                clean_imos = [i for i in clean_imos if i not in fresh]
 
         if not clean_imos:
             self.stdout.write("No candidate vessels found needing ownership enrichment.")
@@ -278,21 +286,36 @@ class Command(BaseCommand):
 
         for b_idx, batch in enumerate(batches, start=1):
             self.stdout.write(f"Batch {b_idx}/{len(batches)}: Querying {len(batch)} IMO(s)...")
+            endpoint = (
+                quota_service.OWNERSHIP_MANUAL_ENDPOINT if options.get("manual") else quota_service.OWNERSHIP_ENDPOINT
+            )
             try:
                 nodes = fetch_vessels(batch)
+                EnrichmentLog.objects.create(
+                    vessel=Vessel.objects.filter(imo=batch[0]).first() if len(batch) == 1 else None,
+                    port=None,
+                    success=True,
+                    credits_spent=len(batch),
+                    endpoint_called=endpoint,
+                    error_message="",
+                )
             except KplerAccessError as exc:
+                self._log_failure(endpoint, exc)
                 self.stderr.write(self.style.ERROR(f"Kpler Access Error: {exc}"))
                 self.stderr.write("Stopping run immediately. Nothing saved for this batch.")
                 break
             except AuthenticationError as exc:
+                self._log_failure(endpoint, exc)
                 self.stderr.write(self.style.ERROR(f"Authentication Error: {exc}"))
                 self.stderr.write("Stopping run immediately. Nothing saved for this batch.")
                 break
             except CallLimitError as exc:
+                self._log_failure(endpoint, exc)
                 self.stderr.write(self.style.ERROR(f"Rate Limit Error: {exc}"))
                 self.stderr.write("Stopping run immediately. Nothing saved for this batch.")
                 break
             except KplerError as exc:
+                self._log_failure(endpoint, exc)
                 self.stderr.write(self.style.ERROR(f"Provider Error: {exc}"))
                 self.stderr.write("Stopping run immediately. Nothing saved for this batch.")
                 break

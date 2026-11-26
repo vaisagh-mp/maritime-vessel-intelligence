@@ -17,10 +17,14 @@ from django.utils import timezone
 
 from apps.common.constants import (
     CLOSED_STAGES,
+    PRIORITY_HIGH,
+    RELATIONSHIP_ROLE_BENEFICIAL_OWNER,
     RELATIONSHIP_ROLE_COMMERCIAL_MANAGER,
     RELATIONSHIP_ROLE_ISM_MANAGER,
     RELATIONSHIP_ROLE_MANAGER,
     RELATIONSHIP_ROLE_OPERATOR,
+    RELATIONSHIP_ROLE_OWNER,
+    RELATIONSHIP_ROLE_REGISTERED_OWNER,
     RELATIONSHIP_ROLE_TECHNICAL_MANAGER,
     STAGE_CONTACTED,
     STAGE_LOST,
@@ -69,8 +73,14 @@ SCORING_WEIGHTS = {
     "origin_repeat_cap": 13,
     "repeat_caller_min_obs": 2,
     "repeat_caller_window_days": 90,
-    # Priority manager
-    "priority_manager": 20,
+    # Manager and owner contact quality (best manager and best owner count, not the sum).
+    # Scored from the contact data we actually hold, not from the manual priority field.
+    "manager_contacts": {"website_and_email": 20, "website_or_email": 12, "name_only": 6},
+    "owner_contacts": {"email": 8, "name_only": 4},
+    # Small bonus when a person has set a related company to priority "high".
+    "priority_high_bonus": 5,
+    # Cap for manager + owner + priority bonus together.
+    "contacts_group_cap": 28,
     # Vessel segment
     "vessel_segment_exact": 20,
     "vessel_segment_keyword": 10,
@@ -97,6 +107,28 @@ MANAGER_ROLES = {
     RELATIONSHIP_ROLE_OPERATOR,
     RELATIONSHIP_ROLE_MANAGER,
 }
+
+# Roles qualifying as owner for the owner-contact signal
+OWNER_ROLES = {
+    RELATIONSHIP_ROLE_REGISTERED_OWNER,
+    RELATIONSHIP_ROLE_BENEFICIAL_OWNER,
+    RELATIONSHIP_ROLE_OWNER,
+}
+
+# When two manager roles score the same, name the first one in this order.
+_MANAGER_ROLE_PREFERENCE = [
+    RELATIONSHIP_ROLE_TECHNICAL_MANAGER,
+    RELATIONSHIP_ROLE_ISM_MANAGER,
+    RELATIONSHIP_ROLE_COMMERCIAL_MANAGER,
+    RELATIONSHIP_ROLE_OPERATOR,
+    RELATIONSHIP_ROLE_MANAGER,
+]
+
+_OWNER_ROLE_PREFERENCE = [
+    RELATIONSHIP_ROLE_REGISTERED_OWNER,
+    RELATIONSHIP_ROLE_BENEFICIAL_OWNER,
+    RELATIONSHIP_ROLE_OWNER,
+]
 
 # Pilot / target ports
 TARGET_PORT_UNLOCODES = {"AEFJR", "SGSIN"}
@@ -264,24 +296,92 @@ def _score_origin_and_repeat(vessel, opportunity) -> tuple[int, list[str]]:
     return capped_points, reasons
 
 
-def _score_priority_manager(vessel) -> int:
-    """Widened manager role check: +20 if vessel has a current relationship with
-    role technical_manager, ism_manager, commercial_manager, operator or manager
-    to a high-priority company.
+def _manager_points(company) -> tuple[int, str]:
+    """Points and wording for a manager company, from the contact data we hold."""
+    has_website = bool((company.website or "").strip())
+    has_email = bool((company.email or "").strip())
+    cfg = SCORING_WEIGHTS["manager_contacts"]
+    if has_website and has_email:
+        return cfg["website_and_email"], "with contacts"
+    if has_website or has_email:
+        return cfg["website_or_email"], "with partial contacts"
+    return cfg["name_only"], "name only"
+
+
+def _owner_points(company) -> tuple[int, str]:
+    """Points and wording for an owner company."""
+    cfg = SCORING_WEIGHTS["owner_contacts"]
+    if (company.email or "").strip():
+        return cfg["email"], "with email"
+    return cfg["name_only"], "name only"
+
+
+def _score_contacts(vessel) -> tuple[int, list[str]]:
+    """Manager and owner contact quality (replaces the old "high priority
+    manager only" rule, which gave nothing to enriched companies).
+
+    - Manager: the best current relationship with role technical manager, ISM
+      manager, commercial manager, operator or manager counts (20 with website
+      and email, 12 with one of them, 6 with the name only). Not summed.
+    - Owner: the best current registered or beneficial owner (8 with email,
+      4 name only).
+    - +5 when any of those companies was set to priority "high" by a person.
+    - The three parts together are capped (``contacts_group_cap``).
+    - No current relationships: 0 and no reason text.
     """
     if not vessel.pk:
-        return 0
+        return 0, []
 
-    has_priority = (
+    relationships = list(
         vessel.relationships
-        .filter(
-            role__in=MANAGER_ROLES,
-            company__priority="high",
-            is_current=True,
-        )
-        .exists()
+        .filter(is_current=True, role__in=MANAGER_ROLES | OWNER_ROLES)
+        .select_related("company")
     )
-    return SCORING_WEIGHTS["priority_manager"] if has_priority else 0
+    if not relationships:
+        return 0, []
+
+    best_manager = None  # (points, preference_rank, role, wording)
+    best_owner = None
+    has_high_priority = False
+
+    for rel in relationships:
+        company = rel.company
+        if company.priority == PRIORITY_HIGH:
+            has_high_priority = True
+
+        if rel.role in MANAGER_ROLES:
+            pts, wording = _manager_points(company)
+            rank = _MANAGER_ROLE_PREFERENCE.index(rel.role)
+            candidate = (pts, -rank, rel.role, wording)
+            if best_manager is None or candidate[:2] > best_manager[:2]:
+                best_manager = candidate
+        else:
+            pts, wording = _owner_points(company)
+            candidate = (pts, -_OWNER_ROLE_PREFERENCE.index(rel.role), rel.role, wording)
+            if best_owner is None or candidate[:2] > best_owner[:2]:
+                best_owner = candidate
+
+    total = 0
+    reasons: list[str] = []
+
+    if best_manager:
+        pts, _, role, wording = best_manager
+        total += pts
+        reasons.append(f"{role.replace('_', ' ')} {wording} {pts}")
+    if best_owner:
+        pts, _, role, wording = best_owner
+        total += pts
+        reasons.append(f"{role.replace('_', ' ')} {wording} {pts}")
+    if has_high_priority:
+        bonus = SCORING_WEIGHTS["priority_high_bonus"]
+        total += bonus
+        reasons.append(f"high-priority company {bonus}")
+
+    cap = SCORING_WEIGHTS["contacts_group_cap"]
+    if total > cap:
+        reasons.append(f"contacts capped at {cap}")
+        total = cap
+    return total, reasons
 
 
 def _score_vessel_segment(vessel) -> int:
@@ -467,11 +567,10 @@ def calculate_score_and_reason(opportunity) -> tuple[int, str]:
     raw_score += origin_pts
     reasons.extend(origin_reasons)
 
-    # 4. Priority ship manager
-    mgr_pts = _score_priority_manager(vessel)
-    raw_score += mgr_pts
-    if mgr_pts > 0:
-        reasons.append(f"priority manager {mgr_pts}")
+    # 4. Manager and owner contact quality
+    contact_pts, contact_reasons = _score_contacts(vessel)
+    raw_score += contact_pts
+    reasons.extend(contact_reasons)
 
     # 5. Vessel segment
     seg_pts = _score_vessel_segment(vessel)

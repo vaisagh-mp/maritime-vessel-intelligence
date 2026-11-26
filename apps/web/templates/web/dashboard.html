@@ -1,0 +1,101 @@
+{% extends "web/base.html" %}
+{% load static %}
+
+{% block title %}Dashboard — Vessel Intelligence{% endblock title %}
+
+{% block styles %}
+<link rel="stylesheet" href="{% static 'web/css/board.css' %}">
+<link rel="stylesheet" href="{% static 'web/css/pages.css' %}">
+{% endblock styles %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header-row">
+        <div class="page-header">
+            <h1>Welcome, {{ user.get_full_name|default:user.get_username }}</h1>
+            <p class="text-muted page-sub">A live view of vessels heading to Singapore and Fujairah.</p>
+        </div>
+        <div class="toolbar" role="group" aria-label="Dashboard controls">
+            <div class="toolbar-field">
+                <label for="filter-port">Port</label>
+                <select id="filter-port" name="port">
+                    <option value="">All ports</option>
+                </select>
+            </div>
+            <button type="button" id="btn-live-refresh" class="btn btn-primary btn-live" disabled>Refresh data (live)</button>
+            <button type="button" id="btn-refresh" class="btn btn-secondary">Reload</button>
+        </div>
+    </div>
+    <p class="live-note">
+        <span class="live-refresh-help">Refresh data (live) fetches the selected port from MarineTraffic and Kpler, one port every 2 minutes. Reload only re-reads saved data.</span>
+        <span id="live-refresh-status" class="live-refresh-status" role="status" aria-live="polite"></span>
+        <span id="updated-time" class="updated-time">Updated --:-- UTC</span>
+    </p>
+
+    <section aria-label="Summary">
+        <div id="stat-cards" class="stat-grid" aria-live="polite">
+            <div class="loading-state" role="status">Loading summary…</div>
+        </div>
+    </section>
+
+    <section class="card table-card" aria-labelledby="hot-title">
+        <div class="card-head">
+            <h2 id="hot-title" class="card-title">Hot / 24 hour priority leads</h2>
+            <a id="table-viewall" class="view-all" href="/priority/24h/">View all</a>
+        </div>
+        <div class="tabs" role="tablist" aria-label="Lead list">
+            <button type="button" role="tab" id="tab-24h" class="tab active" aria-selected="true" aria-controls="table-host">24 hour priority</button>
+            <button type="button" role="tab" id="tab-hot" class="tab" aria-selected="false" aria-controls="table-host" tabindex="-1">HOT leads</button>
+        </div>
+        <div id="table-host" role="tabpanel" aria-labelledby="tab-24h" aria-live="polite"></div>
+    </section>
+
+    <div class="panel-grid">
+        <section class="card panel" aria-labelledby="attention-title">
+            <div class="card-head">
+                <h2 id="attention-title" class="card-title">Needs attention</h2>
+                <span id="attention-count" class="count-pill">0</span>
+            </div>
+            <p class="panel-help">HIGH or HOT leads still at Detected after 24 hours.</p>
+            <div id="panel-attention" aria-live="polite"></div>
+        </section>
+
+        <section class="card panel" aria-labelledby="pipeline-title">
+            <div class="card-head">
+                <h2 id="pipeline-title" class="card-title">Pipeline by stage</h2>
+            </div>
+            <p class="panel-help">Open leads at each stage.</p>
+            <div id="panel-pipeline" aria-live="polite"></div>
+        </section>
+
+        <section class="card panel" aria-labelledby="ports-title">
+            <div class="card-head">
+                <h2 id="ports-title" class="card-title">Leads by port</h2>
+            </div>
+            <p class="panel-help">Open and HOT leads per port.</p>
+            <div id="panel-ports" aria-live="polite"></div>
+        </section>
+
+        <section class="card panel" aria-labelledby="activity-title">
+            <div class="card-head">
+                <h2 id="activity-title" class="card-title">Recent activity</h2>
+            </div>
+            <p class="panel-help">The latest stage changes by your team.</p>
+            <div id="panel-activity" aria-live="polite"></div>
+        </section>
+
+        <section class="card panel" aria-labelledby="fresh-title">
+            <div class="card-head">
+                <h2 id="fresh-title" class="card-title">Data freshness</h2>
+            </div>
+            <p class="panel-help">When each port was last refreshed live.</p>
+            <div id="panel-refresh" aria-live="polite"></div>
+        </section>
+    </div>
+</div>
+{% endblock content %}
+
+{% block scripts %}
+<script type="module" src="{% static 'web/js/dashboard.js' %}{% if static_version %}?v={{ static_version }}{% endif %}"></script>
+<script type="module" src="{% static 'web/js/refresh.js' %}{% if static_version %}?v={{ static_version }}{% endif %}"></script>
+{% endblock scripts %}

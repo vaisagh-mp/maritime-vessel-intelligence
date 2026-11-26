@@ -9,43 +9,103 @@
     <link rel="stylesheet" href="{% static 'web/css/tokens.css' %}">
     <link rel="stylesheet" href="{% static 'web/css/base.css' %}">
     <link rel="stylesheet" href="{% static 'web/css/components.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/layout.css' %}">
     {% block styles %}{% endblock styles %}
 </head>
-<body>
+<body class="{% if web_role == 'admin' or web_role == 'bd_manager' %}has-sidebar{% endif %}">
     <a href="#main" class="skip-link">Skip to main content</a>
 
     {% block nav %}
-    <header class="top-bar">
-        <div class="top-bar-brand">
-            <span class="brand-title">Vessel Intelligence</span>
+    {% if web_role == "admin" or web_role == "bd_manager" %}
+    {% with url_name=request.resolver_match.url_name zone=request.resolver_match.kwargs.zone %}
+    <header class="mobile-bar">
+        <button type="button" id="sidebar-toggle" class="mobile-menu-btn" aria-controls="sidebar" aria-expanded="false" aria-label="Open menu">&#9776;</button>
+        <span class="brand-title">Vessel Intelligence</span>
+    </header>
+
+    <aside class="sidebar" id="sidebar" aria-label="Sidebar">
+        <div class="sidebar-brand">
+            <span class="brand-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="22" height="22" focusable="false"><path d="M3 15l2 4h14l2-4M12 3v9M12 3l5 6h-5M12 5L7 11h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+            <span class="brand-text">
+                <span class="brand-name">Vessel Intelligence</span>
+                <span class="brand-sub">Splendour</span>
+            </span>
         </div>
-        <nav class="top-bar-nav" aria-label="Main navigation">
-            <a href="{% url 'web:home' %}" class="nav-link{% if request.resolver_match.url_name == 'home' %} active{% endif %}"{% if request.resolver_match.url_name == 'home' %} aria-current="page"{% endif %}>Lead board</a>
-            {% if user.is_staff %}
-                <a href="/admin/" class="nav-link">Django admin</a>
-            {% endif %}
-        </nav>
-        <div class="top-bar-user">
-            <span class="user-name">{{ user.get_username }}</span>
+
+        <nav class="sidebar-nav" aria-label="Main navigation">
+            <a href="{% url 'web:home' %}" class="side-link{% if url_name == 'home' %} active{% endif %}"{% if url_name == 'home' %} aria-current="page"{% endif %}>
+                <svg class="side-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M4 13h7V4H4v9zm9 7h7V11h-7v9zM4 20h7v-5H4v5zm9-11h7V4h-7v5z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+                <span>Dashboard</span>
+            </a>
+
+            <div class="side-group" role="group" aria-labelledby="side-priority-label">
+                <span class="side-group-label" id="side-priority-label">
+                    <svg class="side-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M5 21V4m0 0h11l-2 4 2 4H5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span>Priority</span>
+                </span>
+                <a href="{% url 'web:priority' zone='all' %}" class="side-sublink{% if url_name == 'priority' and zone == 'all' %} active{% endif %}"{% if url_name == 'priority' and zone == 'all' %} aria-current="page"{% endif %}>All leads</a>
+                <a href="{% url 'web:priority' zone='24h' %}" class="side-sublink{% if url_name == 'priority' and zone == '24h' %} active{% endif %}"{% if url_name == 'priority' and zone == '24h' %} aria-current="page"{% endif %}>24 hour priority</a>
+                <a href="{% url 'web:priority' zone='72h' %}" class="side-sublink{% if url_name == 'priority' and zone == '72h' %} active{% endif %}"{% if url_name == 'priority' and zone == '72h' %} aria-current="page"{% endif %}>72 hour approach</a>
+                <a href="{% url 'web:latest' %}" class="side-sublink{% if url_name == 'latest' %} active{% endif %}"{% if url_name == 'latest' %} aria-current="page"{% endif %}>Latest arrivals</a>
+                {% if ais_enabled %}<a href="{% url 'web:priority' zone='anchorage' %}" class="side-sublink{% if url_name == 'priority' and zone == 'anchorage' %} active{% endif %}"{% if url_name == 'priority' and zone == 'anchorage' %} aria-current="page"{% endif %}>Anchorage / port</a>{% endif %}
+            </div>
+
+            <a href="{% url 'web:companies' %}" class="side-link{% if url_name == 'companies' or url_name == 'company_detail' %} active{% endif %}"{% if url_name == 'companies' or url_name == 'company_detail' %} aria-current="page"{% endif %}>
+                <svg class="side-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M3 21V7h6V3h6v8h6v10zM7 19h2v-2H7zm0-4h2v-2H7zm4 4h2v-2h-2zm0-4h2v-2h-2zm0-4h2V9h-2zm4 8h2v-2h-2zm0-4h2v-2h-2z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span>Companies</span>
+            </a>
+
             {% if web_role == "admin" %}
-                <span class="user-role-pill">Role: Admin</span>
-            {% elif web_role == "bd_manager" %}
-                <span class="user-role-pill">Role: BD Manager</span>
+            <a href="{% url 'web:business_developers' %}" class="side-link{% if url_name == 'business_developers' %} active{% endif %}"{% if url_name == 'business_developers' %} aria-current="page"{% endif %}>
+                <svg class="side-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M16 11a4 4 0 10-8 0 4 4 0 008 0zM4 20c0-3.3 3.6-5 8-5s8 1.7 8 5M19 4v4M17 6h4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span>Add BD / Business Developer</span>
+            </a>
+            {% endif %}
+            <a href="{% url 'web:email_templates' %}" class="side-link{% if url_name == 'email_templates' %} active{% endif %}"{% if url_name == 'email_templates' %} aria-current="page"{% endif %}>
+                <svg class="side-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M4 6h16v12H4zM4 7l8 6 8-6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span>Email templates</span>
+            </a>
+            <a href="{% url 'web:email_log' %}" class="side-link{% if url_name == 'email_log' %} active{% endif %}"{% if url_name == 'email_log' %} aria-current="page"{% endif %}>
+                <svg class="side-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M7 4h10v16H7zM9.5 9h5M9.5 12.5h5M9.5 16h3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span>Email log</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="sidebar-user">
+                <span class="avatar" aria-hidden="true">{{ user.get_username|slice:":1"|upper }}</span>
+                <span class="sidebar-user-text">
+                    <span class="user-name">{{ user.get_full_name|default:user.get_username }}</span>
+                    <span class="user-role-text">{% if web_role == "admin" %}Admin{% else %}BD Manager{% endif %}</span>
+                </span>
+            </div>
+            {% if user.is_staff %}
+            <a href="/admin/" class="nav-link">Django admin</a>
             {% endif %}
             <form method="post" action="{% url 'web:logout' %}" class="logout-form">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-logout">Logout</button>
             </form>
         </div>
+    </aside>
+    <div class="sidebar-scrim" id="sidebar-scrim" hidden></div>
+    {% endwith %}
+    {% else %}
+    <header class="plain-bar">
+        <span class="brand-title">Vessel Intelligence</span>
     </header>
+    {% endif %}
     {% endblock nav %}
 
-    <main id="main" class="main-content{% block main_class %}{% endblock main_class %}"{% block main_attrs %}{% endblock main_attrs %}>
+    <main id="main" data-ais="{% if ais_enabled %}1{% else %}0{% endif %}" class="main-content{% block main_class %}{% endblock main_class %}"{% block main_attrs %}{% endblock main_attrs %}>
         {% block content %}{% endblock content %}
     </main>
 
     <div id="toast-region" class="toast-region" aria-live="polite"></div>
 
+    <script type="module" src="{% static 'web/js/sidebar.js' %}{% if static_version %}?v={{ static_version }}{% endif %}"></script>
     {% block scripts %}{% endblock scripts %}
 </body>
 </html>

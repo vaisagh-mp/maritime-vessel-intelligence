@@ -8,6 +8,8 @@ import {
     readFilters,
     toQuery,
     apiQueryForZone,
+    inboundLabel,
+    isEtaPassed,
     exportQuery,
     etaRelative,
     etaSourceLabel,
@@ -182,6 +184,7 @@ test("defaultFilters: returns clean default filter object", () => {
         q: "",
         sort: "-score",
         inbound: false,
+        isNew: false,
         closed: false,
     });
 });
@@ -248,4 +251,46 @@ test("zones and board column mapping: anchorage_bound mapped to anchorage column
     assert.equal(zoneToColumn("anchorage"), "anchorage");
     assert.equal(zoneToColumn("24h"), "24h");
     assert.equal(zoneToColumn("72h"), "72h");
+});
+
+test("inboundLabel: an inbound lead whose ETA passed is unconfirmed", () => {
+    const now = Date.parse("2026-11-24T10:00:00Z");
+    assert.equal(inboundLabel({ is_inbound: true, eta: "2026-11-25T10:00:00Z" }, now), "Inbound");
+    assert.equal(inboundLabel({ is_inbound: true, eta: "2026-11-10T22:24:00Z" }, now), "Status unconfirmed");
+    assert.equal(inboundLabel({ is_inbound: true, eta: null }, now), "Inbound");
+    assert.equal(inboundLabel({ is_inbound: false, eta: "2026-11-10T22:24:00Z" }, now), "");
+    assert.equal(inboundLabel(null, now), "");
+    assert.equal(isEtaPassed("garbage", now), false);
+});
+
+test("apiQueryForZone: 24h and 72h hide stale leads, anchorage does not", () => {
+    assert.ok(apiQueryForZone({}, "24h").includes("hide_stale=true"));
+    assert.ok(apiQueryForZone({}, "72h").includes("hide_stale=true"));
+    assert.ok(!apiQueryForZone({}, "anchorage").includes("hide_stale"));
+    assert.ok(!apiQueryForZone({ closed: true }, "24h").includes("hide_stale"));
+});
+
+test("Inbound only also asks for upcoming ETAs, in the list and in the export", () => {
+    assert.ok(apiQueryForZone({ inbound: true }, "24h").includes("upcoming=true"));
+    assert.ok(exportQuery({ inbound: true }).includes("upcoming=true"));
+    assert.ok(!apiQueryForZone({}, "24h").includes("upcoming"));
+});
+
+
+import { apiQueryForZone as aq, exportQuery as eq } from "../board-logic.js";
+
+test("all-leads page: no zone filter, pipeline and new filters round trip", () => {
+    const f = readFilters("?stage=pipeline&new=1&band=HOT");
+    assert.equal(f.stage, "pipeline");
+    assert.equal(f.isNew, true);
+    assert.equal(activeFilterCount(f), 3);
+    assert.equal(toQuery(f), "?band=HOT&stage=pipeline&new=1");
+    const api = new URLSearchParams(aq(f, "all"));
+    assert.equal(api.has("zone"), false);
+    assert.equal(api.has("hide_stale"), false);
+    assert.equal(api.get("stage"), "pipeline");
+    assert.equal(api.get("new_hours"), "24");
+    assert.equal(api.get("open"), "true");
+    assert.equal(new URLSearchParams(aq(f, "24h")).get("zone"), "24h");
+    assert.equal(new URLSearchParams(eq(f)).get("new_hours"), "24");
 });

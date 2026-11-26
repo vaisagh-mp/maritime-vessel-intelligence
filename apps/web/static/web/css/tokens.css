@@ -81,6 +81,16 @@
     --font-2xl: 1.5rem;    /* 24px */
     --font-3xl: 1.875rem;  /* 30px */
 
+    /* Sidebar */
+    --sidebar-width: 256px;
+    --sidebar-bg: #0f2742;
+    --sidebar-text: #e2e8f0;
+    --sidebar-text-muted: #a9b8cc;
+    --sidebar-border: #24405f;
+    --sidebar-hover-bg: #1a3857;
+    --sidebar-active-bg: #e0f2fe;
+    --sidebar-active-text: #0c4a6e;
+
     /* Layout & Containers */
     --page-max-width: 1280px;
     --board-max-width: 1440px;
@@ -131,6 +141,15 @@
         --color-danger-bg: #450a0a;
         --color-danger-border: #7f1d1d;
         --color-danger-hover: #ef4444;
+
+        /* Sidebar - Dark Theme */
+        --sidebar-bg: #060b16;
+        --sidebar-text: #e2e8f0;
+        --sidebar-text-muted: #94a3b8;
+        --sidebar-border: #1e293b;
+        --sidebar-hover-bg: #111b2e;
+        --sidebar-active-bg: #0c4a6e;
+        --sidebar-active-text: #e0f2fe;
 
         /* Focus Ring & Interactive States - Dark Theme */
         --color-focus-ring: rgba(56, 189, 248, 0.35);

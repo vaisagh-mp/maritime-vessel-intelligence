@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 from apps.common.constants import RELATIONSHIP_ROLE_CHOICES
@@ -22,6 +23,19 @@ class VesselRelationship(models.Model):
         ),
     )
     last_verified_date = models.DateField(null=True, blank=True)
+    verified_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="verified_relationships",
+        help_text="The team member who confirmed this link.",
+    )
+    verification_note = models.CharField(
+        max_length=300,
+        blank=True,
+        help_text="How it was confirmed, e.g. 'Called the company, confirmed manager'.",
+    )
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
     is_current = models.BooleanField(default=True)

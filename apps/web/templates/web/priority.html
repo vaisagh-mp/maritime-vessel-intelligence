@@ -1,0 +1,113 @@
+{% extends "web/base.html" %}
+{% load static %}
+
+{% block title %}{{ page.title }} — Vessel Intelligence{% endblock title %}
+
+{% block styles %}
+<link rel="stylesheet" href="{% static 'web/css/board.css' %}">
+<link rel="stylesheet" href="{% static 'web/css/pages.css' %}">
+{% endblock styles %}
+
+{% block main_attrs %} data-zone="{{ zone }}"{% endblock main_attrs %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header-row">
+        <div class="page-header">
+            <h1 id="list-title">{{ page.title }}</h1>
+            <p class="text-muted page-sub">{{ page.blurb }} <span class="count-note"><span id="list-count">0</span> leads</span></p>
+        </div>
+        <div class="toolbar" role="group" aria-label="Refresh controls">
+            <button type="button" id="btn-live-refresh" class="btn btn-primary btn-live" disabled>Refresh data (live)</button>
+            <button type="button" id="btn-refresh" class="btn btn-secondary">Reload</button>
+            <a id="link-export" class="btn btn-secondary export-link" href="/api/v1/opportunities/export/">Export CSV</a>
+        </div>
+    </div>
+    <p class="live-note">
+        <span class="live-refresh-help">Refresh data (live) fetches the port chosen below from MarineTraffic and Kpler, one port every 2 minutes.</span>
+        <span id="live-refresh-status" class="live-refresh-status" role="status" aria-live="polite"></span>
+        <span id="updated-time" class="updated-time">Updated --:-- UTC</span>
+    </p>
+
+    <div class="filter-bar" role="search" aria-label="{{ page.title }} filters">
+        <div class="filter-row">
+            <div class="filter-field">
+                <label for="filter-port">Port</label>
+                <select id="filter-port" name="port">
+                    <option value="">All ports</option>
+                </select>
+            </div>
+            <div class="filter-field">
+                <label for="filter-band">Priority band</label>
+                <select id="filter-band" name="band">
+                    <option value="">All</option>
+                    <option value="HOT">HOT</option>
+                    <option value="HIGH">HIGH</option>
+                    <option value="MEDIUM">MEDIUM</option>
+                    <option value="LOW">LOW</option>
+                </select>
+            </div>
+            <div class="filter-field">
+                <label for="filter-stage">Stage</label>
+                <select id="filter-stage" name="stage">
+                    <option value="">All open stages</option>
+                    <option value="pipeline">In pipeline (contacted onward)</option>
+                    <option value="detected">Detected</option>
+                    <option value="qualifying">Qualifying</option>
+                    <option value="ready_for_review">Ready For Review</option>
+                    <option value="contacted">Contacted</option>
+                    <option value="replied">Replied</option>
+                    <option value="quote_requested">Quote Requested</option>
+                    <option value="quoted">Quoted</option>
+                    <option value="negotiation">Negotiation</option>
+                    <option value="won">Won</option>
+                    <option value="lost">Lost</option>
+                    <option value="follow_up_later">Follow Up Later</option>
+                </select>
+            </div>
+            <div class="filter-field">
+                <label for="filter-q">Search</label>
+                <input type="search" id="filter-q" name="q" placeholder="Vessel name, IMO, MMSI">
+            </div>
+            <div class="filter-field">
+                <label for="filter-sort">Sort</label>
+                <select id="filter-sort" name="sort">
+                    <option value="-score">Highest score</option>
+                    <option value="eta">Soonest ETA</option>
+                </select>
+            </div>
+        </div>
+        <div class="filter-row">
+            <div class="filter-checkboxes">
+                <label for="filter-inbound" class="filter-checkbox">
+                    <input type="checkbox" id="filter-inbound" name="inbound">
+                    <span>Inbound only</span>
+                </label>
+                <label for="filter-new" class="filter-checkbox">
+                    <input type="checkbox" id="filter-new" name="new">
+                    <span>New in last 24 h</span>
+                </label>
+                <label for="filter-closed" class="filter-checkbox">
+                    <input type="checkbox" id="filter-closed" name="closed">
+                    <span>Include closed leads</span>
+                </label>
+            </div>
+            <div class="filter-actions">
+                <span id="active-filters-count" class="active-filters-count" aria-live="polite"></span>
+                <span id="filter-status" class="visually-hidden" role="status" aria-live="polite"></span>
+                <button type="button" id="reset-filters" class="btn btn-secondary">Reset filters</button>
+            </div>
+        </div>
+    </div>
+
+    <section class="card table-card" aria-label="{{ page.title }} leads">
+        <div id="table-host" aria-live="polite" data-empty="{{ page.empty }}"></div>
+        <div id="pager" class="pager"></div>
+    </section>
+</div>
+{% endblock content %}
+
+{% block scripts %}
+<script type="module" src="{% static 'web/js/priority.js' %}{% if static_version %}?v={{ static_version }}{% endif %}"></script>
+<script type="module" src="{% static 'web/js/refresh.js' %}{% if static_version %}?v={{ static_version }}{% endif %}"></script>
+{% endblock scripts %}

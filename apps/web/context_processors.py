@@ -58,5 +58,6 @@ def web_user_role(request):
 
     return {
         "web_role": role,
+        "ais_enabled": getattr(settings, "INGEST_REFRESH_AIS_ENABLED", True),
         "static_version": get_static_version(),
     }

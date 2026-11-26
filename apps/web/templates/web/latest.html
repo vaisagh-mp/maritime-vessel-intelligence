@@ -1,0 +1,63 @@
+{% extends "web/base.html" %}
+{% load static %}
+
+{% block title %}Latest arrivals — Vessel Intelligence{% endblock title %}
+
+{% block styles %}
+<link rel="stylesheet" href="{% static 'web/css/board.css' %}">
+<link rel="stylesheet" href="{% static 'web/css/pages.css' %}">
+<link rel="stylesheet" href="{% static 'web/css/latest.css' %}">
+{% endblock styles %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header-row">
+        <div class="page-header">
+            <h1>Latest arrivals</h1>
+            <p class="text-muted page-sub">Vessels saved by the live Expected Arrivals fetch of each port on the chosen date (today by default), with their owners and managers. <span class="count-note"><span id="latest-count">0</span> vessels</span></p>
+        </div>
+    </div>
+    <div id="latest-fetches" class="fetch-lines" aria-live="polite"></div>
+
+    <div class="filter-bar" role="search" aria-label="Latest arrivals filters">
+        <div class="filter-row">
+            <div class="filter-field">
+                <label for="latest-date">Fetch date (UTC)</label>
+                <input type="date" id="latest-date">
+            </div>
+            <div class="filter-field">
+                <label>&nbsp;</label>
+                <button type="button" id="latest-today" class="btn btn-secondary">Today</button>
+            </div>
+            <div class="filter-field">
+                <label for="latest-port">Port</label>
+                <select id="latest-port">
+                    <option value="">All ports</option>
+                    {% for p in ports %}<option value="{{ p.un_locode }}">{{ p.name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="filter-field">
+                <label for="latest-band">Priority band</label>
+                <select id="latest-band">
+                    <option value="">All</option>
+                    <option value="HOT">HOT</option>
+                    <option value="HIGH">HIGH</option>
+                    <option value="MEDIUM">MEDIUM</option>
+                    <option value="LOW">LOW</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div id="latest-chips" class="date-chips" aria-label="Recent fetch dates"></div>
+
+    <section class="card table-card" aria-label="Latest arrivals list">
+        <div id="latest-host" aria-live="polite"></div>
+    </section>
+    <div id="latest-pager" class="pager"></div>
+</div>
+{% endblock content %}
+
+{% block scripts %}
+<script type="module" src="{% static 'web/js/latest.js' %}{% if static_version %}?v={{ static_version }}{% endif %}"></script>
+{% endblock scripts %}

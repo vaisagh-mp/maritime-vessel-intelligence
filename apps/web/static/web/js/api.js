@@ -5,11 +5,12 @@
  */
 
 export class ApiError extends Error {
-    constructor(message, status, detail = null) {
+    constructor(message, status, detail = null, data = null) {
         super(message);
         this.name = "ApiError";
         this.status = status;
         this.detail = detail;
+        this.data = data;
     }
 }
 
@@ -41,7 +42,7 @@ export async function request(method, url, body = null, timeoutMs = 20000) {
     const isNonGet = method.toUpperCase() !== "GET" && method.toUpperCase() !== "HEAD";
     if (isNonGet) {
         headers["Content-Type"] = "application/json";
-        const csrfToken = getCookie("csrftoken");
+        const csrfToken = getCookie("vi_csrftoken");
         if (csrfToken) {
             headers["X-CSRFToken"] = csrfToken;
         }
@@ -82,7 +83,19 @@ export async function request(method, url, body = null, timeoutMs = 20000) {
         if (timer) clearTimeout(timer);
     }
 
-    if (response.status === 401 || response.status === 403) {
+    // A 403 caused by a missing or stale CSRF token is NOT a logged-out session.
+    // Do not bounce the user to the login page for it.
+    let csrfProblem = false;
+    if (response.status === 403) {
+        try {
+            const peek = await response.clone().json();
+            csrfProblem = typeof peek.detail === "string" && /csrf/i.test(peek.detail);
+        } catch {
+            csrfProblem = false;
+        }
+    }
+
+    if ((response.status === 401 || response.status === 403) && !csrfProblem) {
         const nextPath = encodeURIComponent(window.location.pathname + window.location.search);
         window.location.href = `/login/?next=${nextPath}`;
         throw new ApiError(
@@ -125,7 +138,7 @@ export async function request(method, url, body = null, timeoutMs = 20000) {
             }
         }
         const message = detailText || response.statusText || `HTTP ${response.status}`;
-        throw new ApiError(message, response.status, detailText);
+        throw new ApiError(message, response.status, detailText, data);
     }
 
     return data;

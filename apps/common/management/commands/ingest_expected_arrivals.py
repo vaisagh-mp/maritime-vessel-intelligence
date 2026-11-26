@@ -15,6 +15,7 @@ from django.db import transaction
 
 from apps.common.constants import SOURCE_MARINETRAFFIC_EXPECTED_ARRIVALS
 from apps.enrichment.models import EnrichmentLog
+from apps.enrichment.models import record_arrivals_fetch
 from apps.ports.models import Port
 from integrations.kpler.arrivals_parser import parse_arrivals
 from integrations.kpler.exceptions import (
@@ -286,6 +287,7 @@ class Command(BaseCommand):
             }
 
             # Ingest accepted items inside transaction
+            fetched_items = []
             with transaction.atomic():
                 for item in accepted_items:
                     vessel_dict = item["vessel"]
@@ -324,10 +326,16 @@ class Command(BaseCommand):
                                 port_stats["opps_updated"] += 1
                             elif opp_status == "skipped":
                                 port_stats["opps_skipped"] += 1
+                            if opp is not None and opp_status in ("created", "updated"):
+                                fetched_items.append((vessel, opp))
 
                     except Exception as exc:
                         logger.exception("Error processing vessel IMO %s: %s", imo, exc)
                         port_stats["errors"] += 1
+
+                if live and mode == "arrivals" and fetched_items:
+                    # Keep a dated list of the vessels this fetch saved (the Latest arrivals page).
+                    record_arrivals_fetch(port, fetched_items)
 
                 if dry_run:
                     transaction.set_rollback(True)

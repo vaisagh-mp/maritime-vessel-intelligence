@@ -81,13 +81,19 @@
             </div>
 
             <div class="filter-actions">
-                <button type="button" id="btn-refresh" class="btn btn-secondary">Refresh</button>
+                <button type="button" id="btn-live-refresh" class="btn btn-secondary btn-live" disabled>Refresh data (live)</button>
+                <button type="button" id="btn-refresh" class="btn btn-secondary">Reload</button>
                 <button type="button" id="reset-filters" class="btn btn-secondary">Reset filters</button>
                 <span id="active-filters-count" class="active-filters-count" aria-live="polite"></span>
                 <span id="filter-status" class="visually-hidden" role="status" aria-live="polite"></span>
                 <span id="updated-time" class="updated-time">Updated --:-- UTC</span>
                 <a id="link-export" class="btn btn-secondary export-link" href="/api/v1/opportunities/export/">Export CSV</a>
             </div>
+        </div>
+
+        <div class="filter-row live-refresh-row">
+            <span class="live-refresh-help">Refresh data (live) calls MarineTraffic for the selected port, one call every 2 minutes. Reload only re-reads saved data.</span>
+            <span id="live-refresh-status" class="live-refresh-status" role="status" aria-live="polite"></span>
         </div>
     </div>
 
@@ -143,4 +149,5 @@
 {% block scripts %}
 <script type="module" src="{% static 'web/js/board-logic.js' %}{% if static_version %}?v={{ static_version }}{% endif %}"></script>
 <script type="module" src="{% static 'web/js/board.js' %}{% if static_version %}?v={{ static_version }}{% endif %}"></script>
+<script type="module" src="{% static 'web/js/refresh.js' %}{% if static_version %}?v={{ static_version }}{% endif %}"></script>
 {% endblock scripts %}

@@ -1,0 +1,156 @@
+{% extends "web/base.html" %}
+{% load static %}
+
+{% block title %}Business Developers — Vessel Intelligence{% endblock title %}
+
+{% block styles %}
+<link rel="stylesheet" href="{% static 'web/css/board.css' %}">
+<link rel="stylesheet" href="{% static 'web/css/pages.css' %}">
+{% endblock styles %}
+
+{% block main_attrs %} data-me-id="{{ user.id }}"{% endblock main_attrs %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header-row">
+        <div class="page-header">
+            <h1>Business Developers</h1>
+            <p class="text-muted page-sub">Add the people who work the leads, and manage their access. <span id="bd-summary" class="count-note"></span></p>
+        </div>
+        <div class="toolbar">
+            <button type="button" id="btn-add-bd" class="btn btn-primary">Add Business Developer</button>
+        </div>
+    </div>
+
+    <div class="filter-bar" role="search" aria-label="Business Developer filters">
+        <div class="filter-row">
+            <div class="filter-field filter-wide">
+                <label for="bd-search">Search</label>
+                <input type="search" id="bd-search" placeholder="Name, username or email" autocomplete="off">
+            </div>
+            <div class="filter-field">
+                <label for="bd-status">Status</label>
+                <select id="bd-status">
+                    <option value="">All</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <section class="card table-card" aria-label="Business Developers list">
+        <div id="bd-table-host" aria-live="polite"></div>
+    </section>
+</div>
+
+<dialog id="dlg-add" class="modal" aria-labelledby="add-title">
+    <form id="form-add" class="modal-form" method="dialog" novalidate>
+        <h2 id="add-title" class="modal-title">Add Business Developer</h2>
+        <p class="text-muted">They sign in with this username and password and can work every lead. You can change or reset the password later.</p>
+        <div class="form-error field-error" role="alert"></div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label class="form-label" for="add-first">First name</label>
+                <input class="form-input" id="add-first" name="first_name" type="text" maxlength="150" autocomplete="off" required>
+                <div class="field-error" data-error-for="first_name"></div>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="add-last">Last name</label>
+                <input class="form-input" id="add-last" name="last_name" type="text" maxlength="150" autocomplete="off" required>
+                <div class="field-error" data-error-for="last_name"></div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="add-email">Email</label>
+            <input class="form-input" id="add-email" name="email" type="email" autocomplete="off" required>
+            <div class="field-error" data-error-for="email"></div>
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="add-username">Username</label>
+            <input class="form-input" id="add-username" name="username" type="text" maxlength="150" autocomplete="off" autocapitalize="none" spellcheck="false" required>
+            <div class="field-error" data-error-for="username"></div>
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="add-password">Password</label>
+            <div class="input-row">
+                <input class="form-input" id="add-password" name="password" type="password" autocomplete="new-password" required>
+                <button type="button" class="btn btn-secondary" data-generate>Generate</button>
+            </div>
+            <label class="inline-check"><input type="checkbox" data-show> Show password</label>
+            <div class="field-error" data-error-for="password"></div>
+            <p class="hint-text">At least 8 characters, not too common, not all numbers.</p>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" data-close>Cancel</button>
+            <button type="submit" class="btn btn-primary">Add Business Developer</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="dlg-edit" class="modal" aria-labelledby="edit-title">
+    <form id="form-edit" class="modal-form" method="dialog" novalidate>
+        <h2 id="edit-title" class="modal-title">Edit details</h2>
+        <p class="text-muted">Username: <strong id="edit-username"></strong> (cannot be changed)</p>
+        <div class="form-error field-error" role="alert"></div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label class="form-label" for="edit-first">First name</label>
+                <input class="form-input" id="edit-first" name="first_name" type="text" maxlength="150" required>
+                <div class="field-error" data-error-for="first_name"></div>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="edit-last">Last name</label>
+                <input class="form-input" id="edit-last" name="last_name" type="text" maxlength="150" required>
+                <div class="field-error" data-error-for="last_name"></div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="edit-email">Email</label>
+            <input class="form-input" id="edit-email" name="email" type="email" required>
+            <div class="field-error" data-error-for="email"></div>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" data-close>Cancel</button>
+            <button type="submit" class="btn btn-primary">Save changes</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="dlg-password" class="modal" aria-labelledby="password-title">
+    <form id="form-password" class="modal-form" method="dialog" novalidate>
+        <h2 id="password-title" class="modal-title">Reset password</h2>
+        <p class="text-muted">Set a new password for <strong id="password-name"></strong>. Their old password stops working straight away.</p>
+        <div class="form-error field-error" role="alert"></div>
+        <div class="form-group">
+            <label class="form-label" for="reset-password">New password</label>
+            <div class="input-row">
+                <input class="form-input" id="reset-password" name="password" type="password" autocomplete="new-password" required>
+                <button type="button" class="btn btn-secondary" data-generate>Generate</button>
+            </div>
+            <label class="inline-check"><input type="checkbox" data-show> Show password</label>
+            <div class="field-error" data-error-for="password"></div>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" data-close>Cancel</button>
+            <button type="submit" class="btn btn-primary">Set password</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="dlg-confirm" class="modal modal-small" aria-labelledby="confirm-title">
+    <div class="modal-form">
+        <h2 id="confirm-title" class="modal-title"></h2>
+        <p id="confirm-text" class="text-muted"></p>
+        <div id="confirm-error" class="field-error" role="alert"></div>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" data-close>Cancel</button>
+            <button type="button" id="confirm-go" class="btn btn-primary">Confirm</button>
+        </div>
+    </div>
+</dialog>
+{% endblock content %}
+
+{% block scripts %}
+<script type="module" src="{% static 'web/js/bd.js' %}{% if static_version %}?v={{ static_version }}{% endif %}"></script>
+{% endblock scripts %}

@@ -25,6 +25,7 @@ class VesselSerializer(serializers.ModelSerializer):
             "vessel_size_segment",
             "last_dry_dock",
             "last_renewal_survey",
+            "ownership_checked_at",
             "created_at",
             "updated_at",
         ]

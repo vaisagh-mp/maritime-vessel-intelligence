@@ -36,7 +36,7 @@ class EnrichOwnershipCommandTests(TestCase):
             / "kpler"
             / "tests"
             / "fixtures"
-            / "kpler_sample.json"
+            / "kpler_sample_trimmed.json"
         )
 
     @override_settings(KPLER_OWNERSHIP_ENABLED=True)
@@ -105,14 +105,14 @@ class EnrichOwnershipCommandTests(TestCase):
     @override_settings(KPLER_OWNERSHIP_ENABLED=False)
     def test_from_file_works_with_flag_off(self):
         """--from-file works and enriches vessels even when KPLER_OWNERSHIP_ENABLED is false."""
-        v = Vessel.objects.create(mmsi="240123000", imo="9146297", name="OLD NAME")
+        v = Vessel.objects.create(mmsi="370014000", imo="9146297", name="OLD NAME")
 
         out = io.StringIO()
         call_command("enrich_ownership", f"--from-file={self.fixture_path}", stdout=out)
 
         self.assertIn("Ownership Enrichment Summary (From File)", out.getvalue())
         v.refresh_from_db()
-        self.assertEqual(v.name, "PACIFIC EXPLORER")
+        self.assertEqual(v.name, "BLPL FAITH")
         self.assertIsNotNone(v.ownership_checked_at)
         self.assertEqual(VesselRelationship.objects.filter(vessel=v).count(), 6)
 

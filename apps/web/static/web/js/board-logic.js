@@ -10,6 +10,9 @@ export const VALID_BANDS = ["HOT", "HIGH", "MEDIUM", "LOW"];
 
 export const VALID_STAGES = STAGES.map((s) => s.value);
 
+// "pipeline" is not a real stage: it means every stage after first contact.
+export const STAGE_FILTER_VALUES = [...VALID_STAGES, "pipeline"];
+
 export const STAGE_LABELS = Object.fromEntries(STAGES.map((s) => [s.value, s.label]));
 
 export const BOARD_COLUMNS = [
@@ -49,6 +52,7 @@ export function defaultFilters() {
         q: "",
         sort: "-score",
         inbound: false,
+        isNew: false,
         closed: false,
     };
 }
@@ -71,6 +75,7 @@ export function activeFilterCount(filters) {
     if (filters.q && String(filters.q).trim() !== "") count += 1;
     if (filters.sort && filters.sort !== "-score") count += 1;
     if (Boolean(filters.inbound)) count += 1;
+    if (Boolean(filters.isNew)) count += 1;
     if (Boolean(filters.closed)) count += 1;
     return count;
 }
@@ -105,7 +110,7 @@ export function readFilters(search) {
     }
 
     const stageVal = (params.get("stage") || "").trim().toLowerCase();
-    if (VALID_STAGES.includes(stageVal)) {
+    if (STAGE_FILTER_VALUES.includes(stageVal)) {
         filters.stage = stageVal;
     }
 
@@ -122,6 +127,11 @@ export function readFilters(search) {
     const inboundVal = params.get("inbound");
     if (inboundVal === "1" || inboundVal === "true") {
         filters.inbound = true;
+    }
+
+    const newVal = params.get("new");
+    if (newVal === "1" || newVal === "true") {
+        filters.isNew = true;
     }
 
     const closedVal = params.get("closed");
@@ -150,7 +160,7 @@ export function toQuery(filters) {
     if (filters.band && VALID_BANDS.includes(filters.band)) {
         params.set("band", filters.band);
     }
-    if (filters.stage && VALID_STAGES.includes(filters.stage)) {
+    if (filters.stage && STAGE_FILTER_VALUES.includes(filters.stage)) {
         params.set("stage", filters.stage);
     }
     if (filters.q) {
@@ -161,6 +171,9 @@ export function toQuery(filters) {
     }
     if (filters.inbound) {
         params.set("inbound", "1");
+    }
+    if (filters.isNew) {
+        params.set("new", "1");
     }
     if (filters.closed) {
         params.set("closed", "1");
@@ -174,13 +187,13 @@ export function toQuery(filters) {
  * Build query string for API requests for a specific zone column.
  * Always sends open=true unless closed is on.
  * @param {Object} filters
- * @param {string} zone - "24h" | "72h" | "anchorage"
+ * @param {string} zone - "24h" | "72h" | "anchorage" | "all" (all zones, no zone filter)
  * @returns {string}
  */
 export function apiQueryForZone(filters, zone) {
     const params = new URLSearchParams();
 
-    if (zone) {
+    if (zone && zone !== "all") {
         params.set("zone", zone);
     }
     params.set("ordering", filters && filters.sort === "eta" ? "eta" : "-score");
@@ -188,10 +201,19 @@ export function apiQueryForZone(filters, zone) {
     if (!filters || !filters.closed) {
         params.set("open", "true");
     }
+    // Inbound leads whose ETA passed long ago are no longer a real 24h / 72h arrival.
+    if ((zone === "24h" || zone === "72h") && !(filters && filters.closed)) {
+        params.set("hide_stale", "true");
+    }
 
     if (filters) {
         if (filters.inbound) {
+            // "Inbound only" means vessels really on the way: not ones whose ETA has passed.
             params.set("is_inbound", "true");
+            params.set("upcoming", "true");
+        }
+        if (filters.isNew) {
+            params.set("new_hours", "24");
         }
         if (filters.port) {
             params.set("port", filters.port);
@@ -228,7 +250,12 @@ export function exportQuery(filters) {
 
     if (filters) {
         if (filters.inbound) {
+            // "Inbound only" means vessels really on the way: not ones whose ETA has passed.
             params.set("is_inbound", "true");
+            params.set("upcoming", "true");
+        }
+        if (filters.isNew) {
+            params.set("new_hours", "24");
         }
         if (filters.port) {
             params.set("port", filters.port);
@@ -246,6 +273,31 @@ export function exportQuery(filters) {
 
     const qs = params.toString();
     return qs ? `?${qs}` : "";
+}
+
+/**
+ * True when an ETA exists and is already in the past.
+ * @param {string|null} isoString
+ * @param {number} [nowMs]
+ * @returns {boolean}
+ */
+export function isEtaPassed(isoString, nowMs = Date.now()) {
+    if (!isoString) return false;
+    const t = new Date(isoString).getTime();
+    return !isNaN(t) && t - nowMs <= 0;
+}
+
+/**
+ * Badge text for a lead's arrival status, or "" when it has none.
+ * An inbound lead whose ETA has passed is "Status unconfirmed", because the
+ * saved data no longer says where the vessel really is.
+ * @param {{is_inbound?: boolean, eta?: string|null}} item
+ * @param {number} [nowMs]
+ * @returns {string} "Inbound" | "Status unconfirmed" | ""
+ */
+export function inboundLabel(item, nowMs = Date.now()) {
+    if (!item || !item.is_inbound) return "";
+    return isEtaPassed(item.eta, nowMs) ? "Status unconfirmed" : "Inbound";
 }
 
 /**

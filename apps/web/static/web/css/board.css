@@ -38,7 +38,8 @@
 }
 
 .filter-field select,
-.filter-field input[type="search"] {
+.filter-field input[type="search"],
+.filter-field input[type="text"] {
     height: 38px;
     padding: var(--space-8) var(--space-12);
     font-size: var(--font-sm);
@@ -50,7 +51,8 @@
 }
 
 .filter-field select:focus,
-.filter-field input[type="search"]:focus {
+.filter-field input[type="search"]:focus,
+.filter-field input[type="text"]:focus {
     outline: 2px solid var(--color-accent);
     outline-offset: 1px;
 }
@@ -380,4 +382,26 @@
 .column-load-more {
     margin-top: var(--space-8);
     width: 100%;
+}
+
+/* Live refresh */
+.btn-live:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.live-refresh-row {
+    align-items: baseline;
+    gap: var(--space-16);
+}
+
+.live-refresh-help {
+    font-size: var(--font-xs);
+    color: var(--color-text-muted);
+}
+
+.live-refresh-status {
+    font-size: var(--font-xs);
+    font-weight: 500;
+    color: var(--color-text);
 }
